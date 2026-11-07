@@ -157,3 +157,28 @@ export MSYS_NO_PATHCONV=1   # Git Bash 下必须，否则 /data/... 会被转成
 | 品牌图标（自适应 + Android 13 主题图标单色层） | ✅ |
 | 启动动画（620ms 日升，系统启动画面无缝衔接） | ✅ |
 | Release APK（R8 + 签名） | ✅ |
+
+## 8. 远程仓库
+
+同一份代码推了两个远端，提交内容完全一致：
+
+| 远端名 | 地址 | 分支 |
+|---|---|---|
+| `origin` | `git@github.com:keziea/-.git` | `main` |
+| `gitee` | `git@gitee.com:azs_A/day-by-day.git` | `main` |
+
+日常同步：
+
+```bash
+git push origin main
+git push gitee main
+```
+
+**授权方式**：两个远端都走 SSH，用的是本机 `~/.ssh/id_ed25519`
+（GitHub 账号 `keziea`，Gitee 账号 `江岳阁@azs_A`，均已添加该公钥）。
+
+> 本机 **HTTPS 通道到 github.com 是不通的**（git 报 `schannel: failed to receive handshake`，
+> 走代理报 `CONNECT 502`），只有 SSH 能出网。所以不要改回 HTTPS 地址，否则推不上去。
+
+**注意**：仓库里**不含** `signing/*.jks` 与 `keystore.properties`。
+换机器 clone 后 release 会自动退回 debug 签名；要出正式包，需自行补这两个文件。

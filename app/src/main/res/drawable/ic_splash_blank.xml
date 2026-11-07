@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  系统启动画面（Android 12+）故意留空：
+  平台会把自适应图标画成一个大圆（约 192dp），和 Compose 里 100dp 的圆角卡片尺寸对不上，
+  一衔接就会「缩一下」。这里给一个全透明图标，让 Compose 的日升动画独占启动瞬间。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="288dp"
+    android:height="288dp"
+    android:viewportWidth="288"
+    android:viewportHeight="288">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,0h288v288H0z" />
+</vector>

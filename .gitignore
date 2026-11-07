@@ -1,0 +1,25 @@
+# ---- 构建产物 ----
+.gradle/
+build/
+app/build/
+captures/
+*.aab
+
+# 注意：artifacts/*.apk 是刻意入库的，方便直接下载安装包，不要忽略
+
+# ---- 本机配置（不同机器路径不同）----
+local.properties
+
+# ---- 签名：绝不入库 ----
+signing/
+keystore.properties
+
+# ---- IDE ----
+.idea/
+*.iml
+.DS_Store
+
+# ---- 工具与临时 ----
+.workbuddy/
+*.log
+*.hprof

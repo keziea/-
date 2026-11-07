@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  逐日 · 品牌图标前景：太阳带着光芒从地平线升起
+  画布 108×108，内容限制在半径 36 的真实启动器遮罩内
+  规格见 docs/03 第 9.2 节
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 光晕 -->
+    <path
+        android:fillColor="#17FDF6EE"
+        android:pathData="M54,47m-24.5,0a24.5,24.5 0,1 1,49 0a24.5,24.5 0,1 1,-49 0" />
+
+    <!-- 三道光芒 -->
+    <path
+        android:pathData="M54,29 L54,23"
+        android:strokeColor="#FDF6EE"
+        android:strokeWidth="5.2"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M40.62,34.96 L36.17,30.94"
+        android:strokeColor="#FDF6EE"
+        android:strokeWidth="5.2"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M67.38,34.96 L71.83,30.94"
+        android:strokeColor="#FDF6EE"
+        android:strokeWidth="5.2"
+        android:strokeLineCap="round" />
+
+    <!-- 太阳 -->
+    <path
+        android:fillColor="#FDF6EE"
+        android:pathData="M54,47m-14.5,0a14.5,14.5 0,1 1,29 0a14.5,14.5 0,1 1,-29 0" />
+
+    <!-- 地平线 -->
+    <path
+        android:fillColor="#FDF6EE"
+        android:pathData="M33.3,68.8 L74.7,68.8 A3.3,3.3 0 0 1 74.7,75.4 L33.3,75.4 A3.3,3.3 0 0 1 33.3,68.8 Z" />
+</vector>

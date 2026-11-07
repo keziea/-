@@ -1,0 +1,12 @@
+# 统一换行符，避免 Windows / macOS 之间互相改行尾
+* text=auto eol=lf
+
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# 二进制
+*.png  binary
+*.jpg  binary
+*.apk  binary
+*.jks  binary
+*.jar  binary

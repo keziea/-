@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 13+ 主题图标（系统自动染色）：去掉光晕，只留主形状 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:pathData="M54,29 L54,23"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5.2"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M40.62,34.96 L36.17,30.94"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5.2"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M67.38,34.96 L71.83,30.94"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5.2"
+        android:strokeLineCap="round" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,47m-14.5,0a14.5,14.5 0,1 1,29 0a14.5,14.5 0,1 1,-29 0" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M33.3,68.8 L74.7,68.8 A3.3,3.3 0 0 1 74.7,75.4 L33.3,75.4 A3.3,3.3 0 0 1 33.3,68.8 Z" />
+</vector>

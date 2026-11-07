@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Zhuri" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/paper</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <!-- Android 12+ 系统启动画面：底色与 App 一致，图标沿用自适应图标，随后交给 Compose 的日升动画接管 -->
+        <item name="android:windowSplashScreenBackground">@color/paper</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_blank</item>
+        <item name="android:windowSplashScreenAnimationDuration">160</item>
+    </style>
+</resources>

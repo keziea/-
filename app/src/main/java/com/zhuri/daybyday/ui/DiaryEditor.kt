@@ -45,11 +45,13 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.zhuri.daybyday.model.DiaryEntry
-import com.zhuri.daybyday.model.NoteCategory
 import com.zhuri.daybyday.ui.components.ConfirmDialog
 import com.zhuri.daybyday.ui.components.IconClose
 import com.zhuri.daybyday.ui.components.IconTrash
+import com.zhuri.daybyday.ui.components.TextAction
 import com.zhuri.daybyday.ui.components.ZChip
 import com.zhuri.daybyday.ui.theme.Zhuri
 import com.zhuri.daybyday.ui.theme.noteTint
@@ -64,6 +66,9 @@ fun DiaryEditor(
     initial: DiaryEntry?,
     initialDate: LocalDate,
     today: LocalDate,
+    categories: List<String>,
+    onAddCategory: (String) -> Boolean,
+    onDeleteCategory: (String) -> Unit,
     onDismiss: () -> Unit,
     onSave: (DiaryEntry) -> Unit,
     onDelete: (DiaryEntry) -> Unit
@@ -75,7 +80,8 @@ fun DiaryEditor(
     var title by remember { mutableStateOf(initial?.title ?: "") }
     var content by remember { mutableStateOf(initial?.content ?: "") }
     var date by remember { mutableStateOf(initial?.date ?: initialDate) }
-    var category by remember { mutableStateOf(initial?.category ?: NoteCategory.IDEA) }
+    var category by remember { mutableStateOf(initial?.category ?: categories.firstOrNull() ?: "想法") }
+    var showCategories by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
@@ -280,7 +286,15 @@ fun DiaryEditor(
                 )
 
                 Spacer(Modifier.height(20.dp))
-                Text("归到哪一类", style = Zhuri.type.label, color = colors.ink3)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("归到哪一类", style = Zhuri.type.label, color = colors.ink3)
+                    Spacer(Modifier.weight(1f))
+                    TextAction(
+                        text = "管理分类",
+                        onClick = { showCategories = true },
+                        fontSize = 11
+                    )
+                }
                 Spacer(Modifier.height(10.dp))
                 Row(
                     modifier = Modifier
@@ -288,9 +302,9 @@ fun DiaryEditor(
                         .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    NoteCategory.ordered.forEach { c ->
+                    categories.forEach { c ->
                         ZChip(
-                            text = c.label,
+                            text = c,
                             selected = category == c,
                             onClick = { category = c }
                         )
@@ -326,8 +340,21 @@ fun DiaryEditor(
         }
     }
 
-    if (confirmDelete && initial != null) {
-        ConfirmDialog(
+    if (showCategories) {
+        CategoryManagerDialog(
+            categories = categories,
+            onAdd = onAddCategory,
+            onDelete = { name ->
+                onDeleteCategory(name)
+                if (category == name) {
+                    category = categories.firstOrNull { it != name } ?: category
+                }
+            },
+            onDismiss = { showCategories = false }
+        )
+    }
+
+    if (confirmDelete && initial != null) {        ConfirmDialog(
             title = "删除这篇笔记？",
             message = "「${initial.title.ifBlank { initial.content.take(12) }}」将被永久移除，无法撤销。",
             confirmText = "删除",
@@ -340,5 +367,132 @@ fun DiaryEditor(
             },
             onDismiss = { confirmDelete = false }
         )
+    }
+}
+
+@Composable
+private fun CategoryManagerDialog(
+    categories: List<String>,
+    onAdd: (String) -> Boolean,
+    onDelete: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val colors = Zhuri.colors
+    var input by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = true)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(26.dp))
+                .background(colors.surface)
+                .padding(22.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("管理分类", style = Zhuri.type.h2, color = colors.ink)
+                Spacer(Modifier.weight(1f))
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .background(colors.surfaceAlt)
+                        .clickable(onClick = onDismiss),
+                    contentAlignment = Alignment.Center
+                ) {
+                    IconClose(colors.ink2, Modifier.size(12.dp))
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "删除分类时，里面的笔记会自动移到第一个分类",
+                fontSize = 11.sp,
+                color = colors.ink3
+            )
+            Spacer(Modifier.height(16.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                BasicTextField(
+                    value = input,
+                    onValueChange = {
+                        input = it.take(8)
+                        error = null
+                    },
+                    singleLine = true,
+                    textStyle = Zhuri.type.bodySm.copy(color = colors.ink),
+                    cursorBrush = SolidColor(colors.accent),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(colors.surfaceAlt)
+                        .padding(horizontal = 12.dp, vertical = 11.dp),
+                    decorationBox = { inner ->
+                        if (input.isEmpty()) {
+                            Text("新的分类名称", fontSize = 13.sp, color = colors.ink3)
+                        }
+                        inner()
+                    }
+                )
+                Spacer(Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .height(38.dp)
+                        .clip(CircleShape)
+                        .background(if (input.isBlank()) colors.surfaceAlt else colors.accent)
+                        .clickable(enabled = input.isNotBlank()) {
+                            if (onAdd(input)) {
+                                input = ""
+                            } else {
+                                error = "名称重复或为空"
+                            }
+                        }
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "添加",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (input.isBlank()) colors.ink3 else colors.onInk
+                    )
+                }
+            }
+            if (error != null) {
+                Spacer(Modifier.height(6.dp))
+                Text(error!!, fontSize = 10.sp, color = colors.accent)
+            }
+
+            Spacer(Modifier.height(10.dp))
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                categories.forEach { c ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            Modifier
+                                .size(7.dp)
+                                .clip(CircleShape)
+                                .background(noteTint(c))
+                        )
+                        Spacer(Modifier.width(9.dp))
+                        Text(c, fontSize = 15.sp, color = colors.ink, modifier = Modifier.weight(1f))
+                        if (categories.size > 1) {
+                            Box(
+                                Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                                    .clickable { onDelete(c) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                IconTrash(colors.ink3, Modifier.size(14.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

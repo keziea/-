@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zhuri.daybyday.model.DiaryEntry
 import com.zhuri.daybyday.model.DiaryStats
-import com.zhuri.daybyday.model.NoteCategory
 import com.zhuri.daybyday.model.onDate
 import com.zhuri.daybyday.ui.components.EmptyState
 import com.zhuri.daybyday.ui.components.IconPen
@@ -87,13 +86,14 @@ private fun buildDays(entries: List<DiaryEntry>): List<DiaryDay> {
 @Composable
 fun DiaryScreen(
     entries: List<DiaryEntry>,
+    categories: List<String>,
     today: LocalDate,
     stats: DiaryStats,
     onOpen: (DiaryEntry) -> Unit,
     onAdd: () -> Unit
 ) {
     val colors = Zhuri.colors
-    var category by remember { mutableStateOf<NoteCategory?>(null) }
+    var category by remember { mutableStateOf<String?>(null) }
     val shown = remember(entries, category) {
         if (category == null) entries else entries.filter { it.category == category }
     }
@@ -159,11 +159,11 @@ fun DiaryScreen(
                         selected = category == null,
                         onClick = { category = null }
                     )
-                    NoteCategory.ordered.forEach { c ->
+                    categories.forEach { c ->
                         val count = countsByCategory[c] ?: 0
                         if (count > 0) {
                             ZChip(
-                                text = "${c.label} $count",
+                                text = "$c $count",
                                 selected = category == c,
                                 onClick = { category = c }
                             )
@@ -395,7 +395,7 @@ fun DiaryCard(
                 )
                 Spacer(Modifier.width(5.dp))
                 Text(
-                    text = entry.category.label,
+                    text = entry.category,
                     fontSize = 9.sp,
                     color = colors.ink3
                 )

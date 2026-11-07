@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.sp
 import com.zhuri.daybyday.model.DiaryEntry
 import com.zhuri.daybyday.model.DiaryHeatDay
 import com.zhuri.daybyday.model.DiaryStats
-import com.zhuri.daybyday.model.NoteCategory
 import com.zhuri.daybyday.model.Task
 import com.zhuri.daybyday.ui.components.IconPen
 import com.zhuri.daybyday.ui.components.ProgressRing
@@ -567,8 +566,7 @@ private fun DiaryStatsCard(stats: DiaryStats, today: LocalDate, onOpen: () -> Un
                         .clip(RoundedCornerShape(50))
                 ) {
                     var first = true
-                    NoteCategory.ordered.forEach { c ->
-                        val n = stats.byCategory[c] ?: 0
+                    stats.byCategory.entries.sortedByDescending { it.value }.forEach { (c, n) ->
                         if (n > 0) {
                             if (!first) Spacer(Modifier.width(2.dp))
                             first = false
@@ -586,23 +584,20 @@ private fun DiaryStatsCard(stats: DiaryStats, today: LocalDate, onOpen: () -> Un
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    NoteCategory.ordered.forEach { c ->
-                        val n = stats.byCategory[c] ?: 0
-                        if (n > 0) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    Modifier
-                                        .size(5.dp)
-                                        .clip(CircleShape)
-                                        .background(noteTint(c))
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = "${c.label} $n",
-                                    fontSize = 9.sp,
-                                    color = colors.ink3
-                                )
-                            }
+                    stats.byCategory.entries.sortedByDescending { it.value }.forEach { (c, n) ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier
+                                    .size(5.dp)
+                                    .clip(CircleShape)
+                                    .background(noteTint(c))
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = "$c $n",
+                                fontSize = 9.sp,
+                                color = colors.ink3
+                            )
                         }
                     }
                 }

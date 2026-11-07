@@ -20,7 +20,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +33,8 @@ import androidx.compose.ui.unit.sp
 import com.zhuri.daybyday.ui.theme.Zhuri
 import com.zhuri.daybyday.util.weekChar
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
+import kotlin.math.abs
 
 /** 某一天的任务标记：数量 + 是否全部完成 */
 data class DayMark(val count: Int = 0, val allDone: Boolean = false)
@@ -52,6 +56,21 @@ fun DateStrip(
     val colors = Zhuri.colors
     val total = PAST_DAYS + FUTURE_DAYS + 1
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = (PAST_DAYS - 4).coerceAtLeast(0))
+
+    // 选中日期变化时（包括点「回到今天」），把这一天带回视野
+    val selectedIndex = remember(selected, today) {
+        (PAST_DAYS + ChronoUnit.DAYS.between(today, selected)).toInt()
+    }
+    LaunchedEffect(selectedIndex) {
+        if (selectedIndex in 0 until total) {
+            val target = (selectedIndex - 4).coerceIn(0, (total - 1).coerceAtLeast(0))
+            if (abs(target - listState.firstVisibleItemIndex) > 8) {
+                listState.scrollToItem(target)
+            } else {
+                listState.animateScrollToItem(target)
+            }
+        }
+    }
 
     LazyRow(
         modifier = modifier.padding(horizontal = 22.dp),

@@ -16,7 +16,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.zhuri.daybyday.model.NoteCategory
 
 /**
  * 设计令牌。任何页面都不允许写死颜色 / 字号，只能从这里取。
@@ -171,13 +170,27 @@ object Space {    val xs = 4.dp
     val xxl = 32.dp
 }
 
-/** 笔记分类的点色：低饱和大地色，和单一强调色的日程区分开 */
-fun noteTint(category: NoteCategory): Color = when (category) {
-    NoteCategory.IDEA -> Color(0xFFA9764F)
-    NoteCategory.LIFE -> Color(0xFF6F8A4F)
-    NoteCategory.WORK -> Color(0xFF4F6F8B)
-    NoteCategory.STUDY -> Color(0xFFA85E43)
-    NoteCategory.OTHER -> Color(0xFF8A7F72)
+/** 笔记分类的点色：内置色优先，自定义分类按名称稳定取色，保证同一分类永远同色 */
+fun noteTint(category: String): Color {
+    val fixed = when (category) {
+        "想法" -> Color(0xFFA9764F)
+        "生活" -> Color(0xFF6F8A4F)
+        "工作" -> Color(0xFF4F6F8B)
+        "学习" -> Color(0xFFA85E43)
+        "其他" -> Color(0xFF8A7F72)
+        else -> null
+    }
+    if (fixed != null) return fixed
+    val palette = listOf(
+        Color(0xFF7A6378),
+        Color(0xFF4F7D74),
+        Color(0xFF9A6B5C),
+        Color(0xFF6B7F9A),
+        Color(0xFF8C7A4F),
+        Color(0xFF7D6A8A)
+    )
+    val index = ((category.hashCode() % palette.size) + palette.size) % palette.size
+    return palette[index]
 }
 
 @Composable

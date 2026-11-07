@@ -76,6 +76,7 @@ fun Root(repo: TaskRepository) {
     val tasks by repo.tasks.collectAsStateWithLifecycle()
     val done by repo.done.collectAsStateWithLifecycle()
     val entries by repo.entries.collectAsStateWithLifecycle()
+    val categories by repo.categories.collectAsStateWithLifecycle()
 
     var today by remember { mutableStateOf(LocalDate.now()) }
     var tab by remember { mutableStateOf(0) }
@@ -182,6 +183,7 @@ fun Root(repo: TaskRepository) {
 
                 2 -> DiaryScreen(
                     entries = entries,
+                    categories = categories,
                     today = today,
                     stats = diaryStats,
                     onOpen = { openDiary(it) },
@@ -254,6 +256,9 @@ fun Root(repo: TaskRepository) {
             initial = editingEntry,
             initialDate = diaryDate,
             today = today,
+            categories = categories,
+            onAddCategory = { repo.addCategory(it) },
+            onDeleteCategory = { repo.deleteCategory(it) },
             onDismiss = { diaryEditorOpen = false },
             onSave = { entry ->
                 if (editingEntry == null) repo.addEntry(entry) else repo.updateEntry(entry)

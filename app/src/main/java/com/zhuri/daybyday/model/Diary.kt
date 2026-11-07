@@ -3,23 +3,21 @@ package com.zhuri.daybyday.model
 import androidx.compose.runtime.Immutable
 import java.time.LocalDate
 
-/** 笔记分类，名称直接入库；旧数据没有该字段时回落到「想法」。 */
-enum class NoteCategory(val label: String) {
-    IDEA("想法"),
-    LIFE("生活"),
-    WORK("工作"),
-    STUDY("学习"),
-    OTHER("其他");
+/** 内置分类；用户可以在此基础上增删，分类名直接入库。 */
+val DefaultNoteCategories: List<String> = listOf("想法", "生活", "工作", "学习", "其他")
+const val DefaultNoteCategory: String = "想法"
 
-    companion object {
-        val ordered: List<NoteCategory> get() = entries.toList()
+/** 兼容 v1.4 之前存的是枚举名（IDEA/LIFE…） */
+private val LegacyCategoryNames = mapOf(
+    "IDEA" to "想法",
+    "LIFE" to "生活",
+    "WORK" to "工作",
+    "STUDY" to "学习",
+    "OTHER" to "其他"
+)
 
-        fun from(raw: String): NoteCategory =
-            entries.firstOrNull { it.name == raw }
-                ?: entries.firstOrNull { it.label == raw }
-                ?: IDEA
-    }
-}
+fun normalizeCategory(raw: String): String =
+    LegacyCategoryNames[raw] ?: raw.trim().ifBlank { DefaultNoteCategory }
 
 /** 笔记：同一天允许多篇，正文必填，标题可空。 */
 @Immutable
@@ -28,7 +26,7 @@ data class DiaryEntry(
     val title: String = "",
     val content: String,
     val date: LocalDate,
-    val category: NoteCategory = NoteCategory.IDEA,
+    val category: String = DefaultNoteCategory,
     val createdAt: Long = 0L,
     val updatedAt: Long = 0L
 ) {
@@ -59,7 +57,7 @@ data class DiaryStats(
     val longestStreak: Int = 0,
     val lastDate: LocalDate? = null,
     val heat: List<List<DiaryHeatDay>> = emptyList(),
-    val byCategory: Map<NoteCategory, Int> = emptyMap()
+    val byCategory: Map<String, Int> = emptyMap()
 ) {
     val isEmpty: Boolean get() = total == 0
 }
@@ -87,7 +85,7 @@ fun buildDiaryStats(entries: List<DiaryEntry>, today: LocalDate): DiaryStats {
     var words = 0
     var thisMonth = 0
     var last: LocalDate? = null
-    val byCategory = HashMap<NoteCategory, Int>()
+    val byCategory = HashMap<String, Int>()
 
     entries.forEach { entry ->
         dates.add(entry.date)

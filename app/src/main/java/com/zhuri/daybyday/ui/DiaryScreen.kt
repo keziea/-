@@ -590,9 +590,7 @@ fun DiaryTodaySection(
             dotColor = colors.note,
             modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp)
         ) {
-            if (dayEntries.isNotEmpty()) {
-                TextAction(text = "写一条", onClick = onAdd)
-            }
+            TextAction(text = "写一条", onClick = onAdd, color = colors.note)
         }
 
         if (dayEntries.isEmpty()) {

@@ -92,7 +92,6 @@ fun Root(repo: TaskRepository) {
 
     val diaryStats = remember(entries, today) { buildDiaryStats(entries, today) }
     // 空白的今天已有「添加第一件事」按钮，不再叠一个 FAB
-    val hasTasksOnSelected = remember(tasks, selected) { tasks.any { it.occursOn(selected) } }
 
     // 跨天回到前台时刷新「今天」
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -205,7 +204,8 @@ fun Root(repo: TaskRepository) {
         }
 
         // 笔记页顶部已有「写下今天」入口；空白的今天用空状态按钮，都不叠 FAB
-        if (tab == 1 || (tab == 0 && hasTasksOnSelected)) {
+        // 今日页的添加按钮已下沉到「日程」和「笔记」各自的标题里，不再用全局加号
+        if (tab == 1) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)

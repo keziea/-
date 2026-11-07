@@ -43,6 +43,7 @@ import com.zhuri.daybyday.ui.components.EmptyState
 import com.zhuri.daybyday.ui.components.IconChevron
 import com.zhuri.daybyday.ui.components.ProgressRing
 import com.zhuri.daybyday.ui.components.SectionLabel
+import com.zhuri.daybyday.ui.components.TextAction
 import com.zhuri.daybyday.ui.components.TaskRow
 import com.zhuri.daybyday.ui.theme.Zhuri
 import com.zhuri.daybyday.util.dateShort
@@ -153,6 +154,8 @@ fun TodayScreen(
                     fontSize = 10.sp,
                     color = colors.ink3
                 )
+                Spacer(Modifier.width(10.dp))
+                TextAction(text = "添加", onClick = onAdd, color = colors.accent)
             }
         }
 

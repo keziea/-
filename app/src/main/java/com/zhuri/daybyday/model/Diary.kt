@@ -48,6 +48,12 @@ data class DiaryHeatDay(
 )
 
 @Immutable
+data class NoteDayCount(
+    val date: LocalDate,
+    val count: Int
+)
+
+@Immutable
 data class DiaryStats(
     val total: Int = 0,
     val days: Int = 0,
@@ -57,7 +63,8 @@ data class DiaryStats(
     val longestStreak: Int = 0,
     val lastDate: LocalDate? = null,
     val heat: List<List<DiaryHeatDay>> = emptyList(),
-    val byCategory: Map<String, Int> = emptyMap()
+    val byCategory: Map<String, Int> = emptyMap(),
+    val last7: List<NoteDayCount> = emptyList()
 ) {
     val isEmpty: Boolean get() = total == 0
 }
@@ -86,9 +93,11 @@ fun buildDiaryStats(entries: List<DiaryEntry>, today: LocalDate): DiaryStats {
     var thisMonth = 0
     var last: LocalDate? = null
     val byCategory = HashMap<String, Int>()
+    val countByDate = HashMap<LocalDate, Int>()
 
     entries.forEach { entry ->
         dates.add(entry.date)
+        countByDate[entry.date] = (countByDate[entry.date] ?: 0) + 1
         words += entry.wordCount
         if (entry.date.year == today.year && entry.date.monthValue == today.monthValue) thisMonth++
         if (last == null || entry.date.isAfter(last)) last = entry.date
@@ -126,7 +135,11 @@ fun buildDiaryStats(entries: List<DiaryEntry>, today: LocalDate): DiaryStats {
         longestStreak = longest,
         lastDate = last,
         heat = heat,
-        byCategory = byCategory
+        byCategory = byCategory,
+        last7 = (6 downTo 0).map { offset ->
+            val date = today.minusDays(offset.toLong())
+            NoteDayCount(date, countByDate[date] ?: 0)
+        }
     )
 }
 

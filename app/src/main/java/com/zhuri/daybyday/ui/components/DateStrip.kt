@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +36,7 @@ import com.zhuri.daybyday.util.weekChar
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.abs
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 /** 某一天的任务标记：数量 + 是否全部完成 */
 data class DayMark(val count: Int = 0, val allDone: Boolean = false)
@@ -51,7 +53,9 @@ fun DateStrip(
     today: LocalDate,
     markFor: (LocalDate) -> DayMark,
     onSelect: (LocalDate) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    resetSignal: Int = 0,
+    onScrollingChange: (Boolean) -> Unit = {}
 ) {
     val colors = Zhuri.colors
     val total = PAST_DAYS + FUTURE_DAYS + 1
@@ -69,6 +73,21 @@ fun DateStrip(
             } else {
                 listState.animateScrollToItem(target)
             }
+        }
+    }
+
+    // 用户只是滑动、没有选中任何日期时，也要能一键回到今天
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.isScrollInProgress }
+            .distinctUntilChanged()
+            .collect { scrolling -> onScrollingChange(scrolling) }
+    }
+
+    // 点击「回到今天」但选中日已经是今天时，靠这个信号强制把日期条滚回去
+    LaunchedEffect(resetSignal) {
+        if (resetSignal > 0) {
+            val target = (PAST_DAYS - 4).coerceIn(0, total - 1)
+            listState.animateScrollToItem(target)
         }
     }
 

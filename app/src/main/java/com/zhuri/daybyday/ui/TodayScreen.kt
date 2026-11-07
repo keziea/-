@@ -1,5 +1,12 @@
 package com.zhuri.daybyday.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,13 +18,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zhuri.daybyday.model.DiaryEntry
@@ -26,6 +40,7 @@ import com.zhuri.daybyday.model.compareTasks
 import com.zhuri.daybyday.ui.components.DateStrip
 import com.zhuri.daybyday.ui.components.DayMark
 import com.zhuri.daybyday.ui.components.EmptyState
+import com.zhuri.daybyday.ui.components.IconChevron
 import com.zhuri.daybyday.ui.components.ProgressRing
 import com.zhuri.daybyday.ui.components.SectionLabel
 import com.zhuri.daybyday.ui.components.TaskRow
@@ -53,6 +68,8 @@ fun TodayScreen(
     modifier: Modifier = Modifier
 ) {
     val colors = Zhuri.colors
+    var stripScrolling by remember { mutableStateOf(false) }
+    var jumpSignal by remember { mutableStateOf(0) }
 
     val dayTasks = remember(tasks, done, date) {
         tasks.filter { it.occursOn(date) }
@@ -105,7 +122,11 @@ fun TodayScreen(
                 rate = rate,
                 completedCount = completed.size,
                 totalCount = dayTasks.size,
-                onBackToToday = { onSelectDate(today) }
+                showJump = date != today || stripScrolling,
+                onBackToToday = {
+                    onSelectDate(today)
+                    jumpSignal++
+                }
             )
         }
 
@@ -114,7 +135,9 @@ fun TodayScreen(
                 selected = date,
                 today = today,
                 markFor = markFor,
-                onSelect = onSelectDate
+                onSelect = onSelectDate,
+                resetSignal = jumpSignal,
+                onScrollingChange = { stripScrolling = it }
             )
         }
 
@@ -206,6 +229,7 @@ private fun DateHeader(
     rate: Float,
     completedCount: Int,
     totalCount: Int,
+    showJump: Boolean,
     onBackToToday: () -> Unit
 ) {
     val colors = Zhuri.colors
@@ -242,14 +266,29 @@ private fun DateHeader(
                         fontSize = 13.sp,
                         color = colors.ink3
                     )
-                    if (date != today) {
-                        Spacer(Modifier.height(3.dp))
-                        Text(
-                            text = "回到今天",
-                            fontSize = 11.sp,
-                            color = colors.accent,
-                            modifier = Modifier.clickable(onClick = onBackToToday)
-                        )
+                    AnimatedVisibility(
+                        visible = showJump,
+                        enter = fadeIn(tween(140)) + expandHorizontally(tween(140)),
+                        exit = fadeOut(tween(100)) + shrinkHorizontally(tween(100))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(top = 5.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(colors.accentSoft)
+                                .clickable(onClick = onBackToToday)
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("回到今天", fontSize = 10.sp, color = colors.accentInk)
+                            Spacer(Modifier.width(3.dp))
+                            IconChevron(
+                                colors.accentInk,
+                                direction = 1,
+                                modifier = Modifier.size(9.dp),
+                                stroke = 1.4.dp
+                            )
+                        }
                     }
                 }
             }

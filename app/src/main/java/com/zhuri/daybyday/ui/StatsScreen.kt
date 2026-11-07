@@ -25,7 +25,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,7 +64,9 @@ private data class StatsData(
     val avg30: Float,
     val totalDone: Int,
     val last7: List<DayStat>,
-    val heat: List<List<DayStat>>
+    val heat: List<List<DayStat>>,
+    val weekRate: Float,
+    val prevWeekRate: Float
 )
 
 private fun buildStats(tasks: List<Task>, done: Set<String>, today: LocalDate): StatsData {
@@ -125,6 +129,23 @@ private fun buildStats(tasks: List<Task>, done: Set<String>, today: LocalDate): 
 
     val last7 = (6 downTo 0).map { statOf(today.minusDays(it.toLong())) }
 
+    // 本周 / 上周完成率：给人一个「现在状态如何」的直观判断
+    fun computeWeekRate(weeksAgo: Long): Float {
+        val monday = today.minusDays((today.dayOfWeek.value - 1).toLong()).minusDays(weeksAgo * 7)
+        var sumRate = 0f
+        var n = 0
+        for (i in 0 until 7) {
+            val s = statOf(monday.plusDays(i.toLong()))
+            if (s.total > 0) {
+                sumRate += s.rate
+                n++
+            }
+        }
+        return if (n == 0) 0f else sumRate / n
+    }
+    val weekRate = computeWeekRate(0)
+    val prevWeekRate = computeWeekRate(1)
+
     // 近 8 周热力图：最后一列为本周（周一起）
     val weekEnd = today.plusDays((7 - today.dayOfWeek.value).toLong())
     val heatStart = weekEnd.minusDays(55)
@@ -138,7 +159,9 @@ private fun buildStats(tasks: List<Task>, done: Set<String>, today: LocalDate): 
         avg30 = avg30,
         totalDone = totalDone,
         last7 = last7,
-        heat = heat
+        heat = heat,
+        weekRate = weekRate,
+        prevWeekRate = prevWeekRate
     )
 }
 
@@ -150,6 +173,7 @@ fun StatsScreen(
     done: Set<String>,
     today: LocalDate,
     diaryStats: DiaryStats,
+    categories: List<String>,
     onOpenDiary: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -179,9 +203,9 @@ fun StatsScreen(
 
         item { HeroCard(stats) }
         item { ThreeTiles(stats) }
-        item { WeekBarCard(stats.last7) }
+        item { WeekBarCard(stats) }
         item { HeatCard(stats.heat) }
-        item { DiaryStatsCard(diaryStats, today, onOpenDiary) }
+        item { DiaryStatsCard(diaryStats, categories, today, onOpenDiary) }
     }
 }
 
@@ -311,8 +335,16 @@ private fun StatTile(
 }
 
 @Composable
-private fun WeekBarCard(last7: List<DayStat>) {
+private fun WeekBarCard(stats: StatsData) {
     val colors = Zhuri.colors
+    val last7 = stats.last7
+    val delta = stats.weekRate - stats.prevWeekRate
+    val deltaText = when {
+        stats.prevWeekRate <= 0f && stats.weekRate <= 0f -> ""
+        delta > 0.005f -> "较上周 +${percent(delta)}"
+        delta < -0.005f -> "较上周 −${percent(-delta)}"
+        else -> "与上周持平"
+    }
 
     Column(
         modifier = Modifier
@@ -327,7 +359,15 @@ private fun WeekBarCard(last7: List<DayStat>) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("近 7 天", style = Zhuri.type.label, color = colors.ink3)
             Spacer(Modifier.weight(1f))
-            Text("完成度", fontSize = 10.sp, color = colors.ink3)
+            Text(
+                text = if (stats.weekRate > 0f) {
+                    "本周 ${percent(stats.weekRate)}" + if (deltaText.isNotEmpty()) " · $deltaText" else ""
+                } else {
+                    "完成度"
+                },
+                fontSize = 10.sp,
+                color = if (delta > 0.005f) colors.accent else colors.ink3
+            )
         }
         Spacer(Modifier.height(16.dp))
         Box(
@@ -463,8 +503,14 @@ private val HeatCell = 11.dp
 private val HeatGap = 4.dp
 
 @Composable
-private fun DiaryStatsCard(stats: DiaryStats, today: LocalDate, onOpen: () -> Unit) {
+private fun DiaryStatsCard(
+    stats: DiaryStats,
+    categories: List<String>,
+    today: LocalDate,
+    onOpen: () -> Unit
+) {
     val colors = Zhuri.colors
+    var showAll by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -554,6 +600,19 @@ private fun DiaryStatsCard(stats: DiaryStats, today: LocalDate, onOpen: () -> Un
                 fontSize = 11.sp,
                 color = colors.ink3
             )
+            Spacer(Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "共 ${categories.size} 个分类 · ${stats.byCategory.size} 个已有笔记",
+                    fontSize = 11.sp,
+                    color = colors.ink3
+                )
+                Spacer(Modifier.weight(1f))
+                TextAction(
+                    text = if (showAll) "只看已有" else "显示全部",
+                    onClick = { showAll = !showAll }
+                )
+            }
 
             // 分类分布：一条占比条 + 各类篇数，一眼看出记录的重心
             val totalByCategory = stats.byCategory.values.sum()
@@ -581,7 +640,11 @@ private fun DiaryStatsCard(stats: DiaryStats, today: LocalDate, onOpen: () -> Un
                 }
                 Spacer(Modifier.height(9.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val ordered = stats.byCategory.entries.sortedByDescending { it.value }
+                    val ordered = if (showAll) {
+                        categories.map { it to (stats.byCategory[it] ?: 0) }
+                    } else {
+                        stats.byCategory.entries.sortedByDescending { it.value }.map { it.key to it.value }
+                    }
                     ordered.chunked(3).forEach { rowItems ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -596,13 +659,16 @@ private fun DiaryStatsCard(stats: DiaryStats, today: LocalDate, onOpen: () -> Un
                                         Modifier
                                             .size(5.dp)
                                             .clip(CircleShape)
-                                            .background(noteTint(c))
+                                            .background(
+                                                if (n > 0) noteTint(c)
+                                                else colors.ink3.copy(alpha = 0.30f)
+                                            )
                                     )
                                     Spacer(Modifier.width(4.dp))
                                     Text(
                                         text = "$c $n",
                                         fontSize = 9.sp,
-                                        color = colors.ink3,
+                                        color = if (n > 0) colors.ink3 else colors.ink3.copy(alpha = 0.6f),
                                         maxLines = 1
                                     )
                                 }
@@ -611,6 +677,35 @@ private fun DiaryStatsCard(stats: DiaryStats, today: LocalDate, onOpen: () -> Un
                                 Spacer(Modifier.weight(1f))
                             }
                         }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("近 7 天", style = Zhuri.type.label, color = colors.ink3)
+                Spacer(Modifier.weight(1f))
+                Text("每天写了几篇", fontSize = 9.sp, color = colors.ink3)
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                stats.last7.forEach { day ->
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = if (day.count > 0) "${day.count}" else "·",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (day.count > 0) colors.note else colors.ink3.copy(alpha = 0.5f)
+                        )
+                        Spacer(Modifier.height(3.dp))
+                        Text(
+                            text = weekChar(day.date.dayOfWeek.value),
+                            fontSize = 9.sp,
+                            color = if (day.date == today) colors.ink2 else colors.ink3
+                        )
                     }
                 }
             }

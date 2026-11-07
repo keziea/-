@@ -197,6 +197,7 @@ fun Root(repo: TaskRepository) {
                     done = done,
                     today = today,
                     diaryStats = diaryStats,
+                    categories = categories,
                     onOpenDiary = { tab = 2 }
                 )
             }

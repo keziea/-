@@ -37,6 +37,7 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.abs
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 /** 某一天的任务标记：数量 + 是否全部完成 */
 data class DayMark(val count: Int = 0, val allDone: Boolean = false)
@@ -55,11 +56,12 @@ fun DateStrip(
     onSelect: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
     resetSignal: Int = 0,
-    onScrollingChange: (Boolean) -> Unit = {}
+    onDisplacedChange: (Boolean) -> Unit = {}
 ) {
     val colors = Zhuri.colors
     val total = PAST_DAYS + FUTURE_DAYS + 1
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex = (PAST_DAYS - 4).coerceAtLeast(0))
+    val homeIndex = (PAST_DAYS - 4).coerceAtLeast(0)
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = homeIndex)
 
     // 选中日期变化时（包括点「回到今天」），把这一天带回视野
     val selectedIndex = remember(selected, today) {
@@ -76,11 +78,14 @@ fun DateStrip(
         }
     }
 
-    // 用户只是滑动、没有选中任何日期时，也要能一键回到今天
-    LaunchedEffect(listState) {
-        snapshotFlow { listState.isScrollInProgress }
+    // 只看「是否离开了原位」：滑偏就通知显示回到今天，拨回原位就通知隐藏
+    LaunchedEffect(listState, homeIndex) {
+        snapshotFlow {
+            listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
+        }
+            .map { (index, offset) -> !(index == homeIndex && offset == 0) }
             .distinctUntilChanged()
-            .collect { scrolling -> onScrollingChange(scrolling) }
+            .collect { displaced -> onDisplacedChange(displaced) }
     }
 
     // 点击「回到今天」但选中日已经是今天时，靠这个信号强制把日期条滚回去

@@ -25,7 +25,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,7 +50,6 @@ import com.zhuri.daybyday.util.dayLabel
 import com.zhuri.daybyday.util.doneKey
 import com.zhuri.daybyday.util.monthCn
 import java.time.LocalDate
-import kotlinx.coroutines.delay
 
 @Composable
 fun TodayScreen(
@@ -70,17 +68,9 @@ fun TodayScreen(
     modifier: Modifier = Modifier
 ) {
     val colors = Zhuri.colors
-    var jumpLatched by remember { mutableStateOf(false) }
     var jumpSignal by remember { mutableStateOf(0) }
-    // 点击后由程序触发的滚动不能算作用户滑动，否则胶囊会立刻又冒出来
-    var suppressLatch by remember { mutableStateOf(false) }
-    LaunchedEffect(jumpSignal) {
-        if (jumpSignal > 0) {
-            suppressLatch = true
-            delay(800)
-            suppressLatch = false
-        }
-    }
+    // 由日期条位置驱动：滑偏才显示，拨回原位自动隐藏
+    var stripDisplaced by remember { mutableStateOf(false) }
 
     val dayTasks = remember(tasks, done, date) {
         tasks.filter { it.occursOn(date) }
@@ -133,11 +123,10 @@ fun TodayScreen(
                 rate = rate,
                 completedCount = completed.size,
                 totalCount = dayTasks.size,
-                showJump = date != today || jumpLatched,
+                showJump = stripDisplaced,
                 onBackToToday = {
                     onSelectDate(today)
                     jumpSignal++
-                    jumpLatched = false
                 }
             )
         }
@@ -147,15 +136,9 @@ fun TodayScreen(
                 selected = date,
                 today = today,
                 markFor = markFor,
-                onSelect = { picked ->
-                    jumpLatched = false
-                    onSelectDate(picked)
-                },
+                onSelect = onSelectDate,
                 resetSignal = jumpSignal,
-                // 只要滑动过就锁定显示，直到用户点了「回到今天」或主动选了某一天
-                onScrollingChange = { scrolling ->
-                    if (scrolling && !suppressLatch) jumpLatched = true
-                }
+                onDisplacedChange = { stripDisplaced = it }
             )
         }
 

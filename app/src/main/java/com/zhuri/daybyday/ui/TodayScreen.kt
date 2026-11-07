@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zhuri.daybyday.model.DiaryEntry
 import com.zhuri.daybyday.model.Task
 import com.zhuri.daybyday.model.compareTasks
 import com.zhuri.daybyday.ui.components.DateStrip
@@ -41,10 +42,14 @@ fun TodayScreen(
     done: Set<String>,
     date: LocalDate,
     today: LocalDate,
+    diaryEntries: List<DiaryEntry>,
     onSelectDate: (LocalDate) -> Unit,
     onToggle: (Task) -> Unit,
     onOpenTask: (Task) -> Unit,
     onAdd: () -> Unit,
+    onOpenDiary: (DiaryEntry) -> Unit,
+    onNewDiary: (LocalDate) -> Unit,
+    onViewAllDiary: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = Zhuri.colors
@@ -62,23 +67,36 @@ fun TodayScreen(
                 }
             )
     }
-    val pending = dayTasks.filter { doneKey(it.id, date) !in done }
-    val completed = dayTasks.filter { doneKey(it.id, date) in done }
+    val pending = remember(dayTasks, done, date) {
+        dayTasks.filter { doneKey(it.id, date) !in done }
+    }
+    val completed = remember(dayTasks, done, date) {
+        dayTasks.filter { doneKey(it.id, date) in done }
+    }
     val rate = if (dayTasks.isEmpty()) 0f else completed.size.toFloat() / dayTasks.size
 
-    val markFor: (LocalDate) -> DayMark = { d ->
-        val list = tasks.filter { it.occursOn(d) }
-        if (list.isEmpty()) {
-            DayMark()
-        } else {
-            val doneCount = list.count { doneKey(it.id, d) in done }
-            DayMark(count = list.size, allDone = doneCount == list.size)
+    // 日期条 60 天的状态只算一次，避免每一格在组合里重复过滤全量任务
+    val marks = remember(tasks, done, today) {
+        val map = HashMap<LocalDate, DayMark>(64)
+        for (i in 0 until 60) {
+            val d = today.minusDays(14).plusDays(i.toLong())
+            val list = tasks.filter { it.occursOn(d) }
+            map[d] = if (list.isEmpty()) {
+                DayMark()
+            } else {
+                val doneCount = list.count { doneKey(it.id, d) in done }
+                DayMark(count = list.size, allDone = doneCount == list.size)
+            }
         }
+        map
+    }
+    val markFor = remember(marks) {
+        { d: LocalDate -> marks[d] ?: DayMark() }
     }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 132.dp)
+        contentPadding = PaddingValues(bottom = 160.dp)
     ) {
         item {
             DateHeader(
@@ -107,7 +125,7 @@ fun TodayScreen(
                     subtitle = "加一件小事，让这一天有迹可循",
                     actionText = "添加第一件事",
                     onAction = onAdd,
-                    modifier = Modifier.padding(top = 48.dp, bottom = 24.dp)
+                    modifier = Modifier.padding(top = 24.dp, bottom = 16.dp)
                 )
             }
         } else {
@@ -161,6 +179,21 @@ fun TodayScreen(
                             .animateItem()
                     )
                 }
+            }
+        }
+
+        // 未来日期只做安排，不留笔记；笔记是回望，不是预告
+        if (!date.isAfter(today)) {
+            item(key = "diary_today") {
+                DiaryTodaySection(
+                    date = date,
+                    today = today,
+                    entries = diaryEntries,
+                    onOpen = onOpenDiary,
+                    onAdd = { onNewDiary(date) },
+                    onViewAll = onViewAllDiary,
+                    modifier = Modifier.padding(top = 10.dp)
+                )
             }
         }
     }

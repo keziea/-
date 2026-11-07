@@ -22,10 +22,10 @@ android {
 
     defaultConfig {
         applicationId = "com.zhuri.daybyday"
-        minSdk = 26
+        minSdk = 23
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 6
+        versionName = "1.4"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -60,6 +60,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -82,6 +83,8 @@ kotlin {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+
     implementation("androidx.core:core-ktx:1.16.0")
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.1")

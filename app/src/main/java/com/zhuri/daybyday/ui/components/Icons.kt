@@ -202,6 +202,54 @@ fun IconClock(color: Color, modifier: Modifier = Modifier, stroke: Dp = 1.7.dp) 
     }
 }
 
+/** 笔记：圆角书页 + 两条短横线 */
+@Composable
+fun IconDiary(color: Color, modifier: Modifier = Modifier, stroke: Dp = 1.8.dp) {
+    Canvas(modifier) {
+        val s = size.minDimension
+        val sw = stroke.toPx()
+        val o = sw / 2f
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(s * 0.18f + o, s * 0.10f + o),
+            size = Size(s * 0.64f - sw, s * 0.80f - sw),
+            cornerRadius = CornerRadius(s * 0.12f),
+            style = Stroke(sw)
+        )
+        drawLine(color, Offset(s * 0.34f, s * 0.38f), Offset(s * 0.66f, s * 0.38f), sw, StrokeCap.Round)
+        drawLine(color, Offset(s * 0.34f, s * 0.58f), Offset(s * 0.58f, s * 0.58f), sw, StrokeCap.Round)
+    }
+}
+
+/** 笔：斜向笔身 + 笔尖分隔线 */
+@Composable
+fun IconPen(color: Color, modifier: Modifier = Modifier, stroke: Dp = 1.8.dp) {
+    Canvas(modifier) {
+        val s = size.minDimension
+        val sw = stroke.toPx()
+        val body = Path().apply {
+            moveTo(s * 0.20f, s * 0.80f)
+            lineTo(s * 0.27f, s * 0.56f)
+            lineTo(s * 0.60f, s * 0.23f)
+            lineTo(s * 0.77f, s * 0.40f)
+            lineTo(s * 0.44f, s * 0.73f)
+            close()
+        }
+        drawPath(
+            path = body,
+            color = color,
+            style = Stroke(sw, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
+        drawLine(
+            color,
+            Offset(s * 0.27f, s * 0.56f),
+            Offset(s * 0.44f, s * 0.73f),
+            sw * 0.9f,
+            StrokeCap.Round
+        )
+    }
+}
+
 /** 垃圾桶：盖 + 桶身 + 一条竖线 */
 @Composable
 fun IconTrash(color: Color, modifier: Modifier = Modifier, stroke: Dp = 1.6.dp) {

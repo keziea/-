@@ -1,11 +1,14 @@
 package com.zhuri.daybyday.util
 
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private val ISO: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.CHINA)
+private val HM: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.CHINA)
 
 private val MONTH_CN = arrayOf(
     "一月", "二月", "三月", "四月", "五月", "六月",
@@ -52,6 +55,20 @@ fun dateShort(date: LocalDate): String = "${date.monthValue}月${date.dayOfMonth
 
 fun dateFull(date: LocalDate): String = "${date.year}年${date.monthValue}月${date.dayOfMonth}日"
 
+/** 星期 + 月日，用于笔记的「今天 · 周五 · 11月7日」这类副标题。 */
+fun dateWord(date: LocalDate): String = "${weekdayCn(date)} · ${dateShort(date)}"
+
 fun doneKey(taskId: String, date: LocalDate): String = "$taskId|${date.toIso()}"
 
 fun formatTimeLabel(time: String?): String = time ?: ""
+
+/** 时间戳 → HH:mm；0 或非法值返回 null。 */
+fun timeHm(epochMillis: Long): String? {
+    if (epochMillis <= 0L) return null
+    return runCatching {
+        Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).format(HM)
+    }.getOrNull()
+}
+
+/** 3240 → 3,240 */
+fun formatCount(value: Int): String = String.format(Locale.CHINA, "%,d", value)

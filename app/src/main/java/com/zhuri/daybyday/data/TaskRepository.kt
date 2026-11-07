@@ -1,6 +1,8 @@
 package com.zhuri.daybyday.data
 
 import android.content.Context
+import com.zhuri.daybyday.model.DiaryEntry
+import com.zhuri.daybyday.model.NoteCategory
 import com.zhuri.daybyday.model.Repeat
 import com.zhuri.daybyday.model.Task
 import com.zhuri.daybyday.util.doneKey
@@ -8,6 +10,7 @@ import com.zhuri.daybyday.util.parseIso
 import com.zhuri.daybyday.util.toIso
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +33,7 @@ class TaskRepository(context: Context) {
     private val bakFile = File(dir, "zhuri_data.bak.json")
     private val tmpFile = File(dir, "zhuri_data.tmp")
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private val io = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
 
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
@@ -37,6 +41,9 @@ class TaskRepository(context: Context) {
 
     private val _done = MutableStateFlow<Set<String>>(emptySet())
     val done: StateFlow<Set<String>> = _done.asStateFlow()
+
+    private val _entries = MutableStateFlow<List<DiaryEntry>>(emptyList())
+    val entries: StateFlow<List<DiaryEntry>> = _entries.asStateFlow()
 
     init {
         load()
@@ -68,17 +75,38 @@ class TaskRepository(context: Context) {
 
     fun isDone(taskId: String, date: LocalDate): Boolean = doneKey(taskId, date) in _done.value
 
+    fun addEntry(entry: DiaryEntry) {
+        _entries.update { it + entry }
+        persist()
+    }
+
+    fun updateEntry(entry: DiaryEntry) {
+        _entries.update { list -> list.map { if (it.id == entry.id) entry else it } }
+        persist()
+    }
+
+    fun deleteEntry(id: String) {
+        _entries.update { list -> list.filterNot { it.id == id } }
+        persist()
+    }
+
     // ---------- 落盘 ----------
 
     private fun persist() {
         val snapshotTasks = _tasks.value
         val snapshotDone = _done.value
+        val snapshotEntries = _entries.value
         io.launch {
-            runCatching { write(dataFile, snapshotTasks, snapshotDone) }
+            runCatching { write(dataFile, snapshotTasks, snapshotDone, snapshotEntries) }
         }
     }
 
-    private fun write(file: File, tasks: List<Task>, done: Set<String>) {
+    private fun write(
+        file: File,
+        tasks: List<Task>,
+        done: Set<String>,
+        entries: List<DiaryEntry>
+    ) {
         val root = JSONObject()
         root.put("version", 1)
 
@@ -103,6 +131,20 @@ class TaskRepository(context: Context) {
         val doneArray = JSONArray()
         done.sorted().forEach { doneArray.put(it) }
         root.put("done", doneArray)
+
+        val entryArray = JSONArray()
+        entries.forEach { entry ->
+            entryArray.put(JSONObject().apply {
+                put("id", entry.id)
+                put("title", entry.title)
+                put("content", entry.content)
+                put("date", entry.date.toIso())
+                put("category", entry.category.name)
+                put("createdAt", entry.createdAt)
+                put("updatedAt", entry.updatedAt)
+            })
+        }
+        root.put("entries", entryArray)
 
         if (tmpFile.exists()) tmpFile.delete()
         tmpFile.writeText(root.toString())
@@ -130,9 +172,10 @@ class TaskRepository(context: Context) {
         }
         _tasks.value = parsed.first
         _done.value = parsed.second
+        _entries.value = parsed.third
     }
 
-    private fun parse(text: String): Pair<List<Task>, Set<String>> {
+    private fun parse(text: String): Triple<List<Task>, Set<String>, List<DiaryEntry>> {
         val root = JSONObject(text)
 
         val tasks = ArrayList<Task>()
@@ -177,6 +220,25 @@ class TaskRepository(context: Context) {
                 if (v.contains("|")) done.add(v)
             }
         }
-        return tasks to done
+        val entries = ArrayList<DiaryEntry>()
+        val entryArray = root.optJSONArray("entries") ?: JSONArray()
+        for (i in 0 until entryArray.length()) {
+            val o = entryArray.optJSONObject(i) ?: continue
+            val date = parseIso(o.optString("date")) ?: continue
+            val content = o.optString("content")
+            if (content.isBlank()) continue
+            entries.add(
+                DiaryEntry(
+                    id = o.optString("id"),
+                    title = o.optString("title"),
+                    content = content,
+                    date = date,
+                    category = NoteCategory.from(o.optString("category")),
+                    createdAt = o.optLong("createdAt", 0L),
+                    updatedAt = o.optLong("updatedAt", 0L)
+                )
+            )
+        }
+        return Triple(tasks, done, entries)
     }
 }

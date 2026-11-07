@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zhuri.daybyday.model.NoteCategory
 
 /**
  * 设计令牌。任何页面都不允许写死颜色 / 字号，只能从这里取。
@@ -34,6 +35,9 @@ data class ZhuriColors(
     val accentSoft: Color,
     val accentInk: Color,
     val onInk: Color,
+    /** 笔记的专属色：冷灰绿，用来和暖赤陶色的日程在视觉上分开 */
+    val note: Color,
+    val noteSoft: Color,
     val isDark: Boolean
 )
 
@@ -49,6 +53,8 @@ val LightColors = ZhuriColors(
     accentSoft = Color(0xFFFBE9E2),
     accentInk = Color(0xFFB23F26),
     onInk = Color(0xFFFBF7F1),
+    note = Color(0xFF4E6B60),
+    noteSoft = Color(0xFFE7EFEA),
     isDark = false
 )
 
@@ -64,6 +70,8 @@ val DarkColors = ZhuriColors(
     accentSoft = Color(0xFF33201A),
     accentInk = Color(0xFFF7A38C),
     onInk = Color(0xFF12100E),
+    note = Color(0xFF8FB6A8),
+    noteSoft = Color(0xFF1D2723),
     isDark = true
 )
 
@@ -71,10 +79,12 @@ val DarkColors = ZhuriColors(
 data class ZhuriType(
     val display: TextStyle,
     val displaySerif: TextStyle,
+    val dateNum: TextStyle,
     val h1: TextStyle,
     val h2: TextStyle,
     val body: TextStyle,
     val bodySm: TextStyle,
+    val reading: TextStyle,
     val label: TextStyle,
     val caption: TextStyle
 )
@@ -94,6 +104,13 @@ private val ZhuriTypeDefault = ZhuriType(
         fontSize = 50.sp,
         lineHeight = 54.sp,
         letterSpacing = (-0.5).sp,
+        fontWeight = FontWeight.Normal
+    ),
+    dateNum = TextStyle(
+        fontFamily = Serif,
+        fontSize = 25.sp,
+        lineHeight = 29.sp,
+        letterSpacing = (-0.3).sp,
         fontWeight = FontWeight.Normal
     ),
     h1 = TextStyle(
@@ -116,6 +133,10 @@ private val ZhuriTypeDefault = ZhuriType(
     bodySm = TextStyle(
         fontSize = 14.sp,
         lineHeight = 20.sp
+    ),
+    reading = TextStyle(
+        fontSize = 15.sp,
+        lineHeight = 24.sp
     ),
     label = TextStyle(
         fontSize = 12.sp,
@@ -141,14 +162,22 @@ object Zhuri {
 }
 
 // 常用间距，统一出口，避免各处散落数字
-object Space {
-    val xs = 4.dp
+object Space {    val xs = 4.dp
     val s = 8.dp
     val m = 12.dp
     val l = 16.dp
     val xl = 20.dp
     val page = 22.dp
     val xxl = 32.dp
+}
+
+/** 笔记分类的点色：低饱和大地色，和单一强调色的日程区分开 */
+fun noteTint(category: NoteCategory): Color = when (category) {
+    NoteCategory.IDEA -> Color(0xFFA9764F)
+    NoteCategory.LIFE -> Color(0xFF6F8A4F)
+    NoteCategory.WORK -> Color(0xFF4F6F8B)
+    NoteCategory.STUDY -> Color(0xFFA85E43)
+    NoteCategory.OTHER -> Color(0xFF8A7F72)
 }
 
 @Composable

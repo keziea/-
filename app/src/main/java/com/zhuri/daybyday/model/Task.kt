@@ -1,5 +1,6 @@
 package com.zhuri.daybyday.model
 
+import androidx.compose.runtime.Immutable
 import com.zhuri.daybyday.util.weekChar
 import java.time.LocalDate
 
@@ -8,6 +9,7 @@ enum class Repeat { NONE, DAILY, WEEKLY, MONTHLY }
 /**
  * 一条待办定义。重复任务不是「生成 N 条实例」，而是同一份定义 + 完成记录，见 docs/04。
  */
+@Immutable
 data class Task(
     val id: String,
     val title: String,

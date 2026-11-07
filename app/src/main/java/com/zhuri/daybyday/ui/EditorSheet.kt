@@ -183,9 +183,7 @@ fun EditorSheet(
                     modifier = Modifier
                         .height(36.dp)
                         .clip(CircleShape)
-                        .background(
-                            if (canSave) colors.accent else colors.accent.copy(alpha = 0.32f)
-                        )
+                        .background(if (canSave) colors.accent else colors.surfaceAlt)
                         .clickable(enabled = canSave, onClick = doSave)
                         .padding(horizontal = 20.dp),
                     contentAlignment = Alignment.Center
@@ -194,7 +192,7 @@ fun EditorSheet(
                         text = if (initial == null) "添加" else "保存",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
-                        color = colors.onInk
+                        color = if (canSave) colors.onInk else colors.ink3
                     )
                 }
             }
@@ -490,14 +488,14 @@ private fun DatePickDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 26.dp)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
-                .background(colors.surface)
-                .padding(20.dp)
-        ) {
+        AdaptiveDialogFrame(maxWidth = 420.dp) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(colors.surface)
+                    .padding(20.dp)
+            ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("选择日期", style = Zhuri.type.h2, color = colors.ink)
                 Spacer(Modifier.weight(1f))
@@ -572,6 +570,7 @@ private fun DatePickDialog(
                     )
                 }
             }
+            }
         }
     }
 }
@@ -617,15 +616,15 @@ private fun TimePickDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 46.dp)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
-                .background(colors.surface)
-                .padding(22.dp)
-        ) {
-            Text("选择时间", style = Zhuri.type.h2, color = colors.ink)
+        AdaptiveDialogFrame(maxWidth = 380.dp) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(colors.surface)
+                    .padding(22.dp)
+            ) {
+                Text("选择时间", style = Zhuri.type.h2, color = colors.ink)
             Spacer(Modifier.height(18.dp))
 
             Row(
@@ -691,6 +690,7 @@ private fun TimePickDialog(
                         color = colors.onInk
                     )
                 }
+            }
             }
         }
     }

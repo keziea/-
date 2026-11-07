@@ -3,6 +3,7 @@ package com.zhuri.daybyday.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -32,6 +33,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -122,6 +124,11 @@ fun CheckCircle(
         animationSpec = tween(150),
         label = "checkAlpha"
     )
+    val checkScale by animateFloatAsState(
+        targetValue = if (checked) 1f else 0.4f,
+        animationSpec = spring(dampingRatio = 0.5f, stiffness = 620f),
+        label = "checkScale"
+    )
 
     Box(
         modifier = modifier
@@ -143,6 +150,10 @@ fun CheckCircle(
                     color = colors.onInk,
                     modifier = Modifier
                         .size(12.dp)
+                        .graphicsLayer {
+                            scaleX = checkScale
+                            scaleY = checkScale
+                        }
                         .alpha(checkAlpha),
                     stroke = 2.6.dp
                 )
@@ -211,36 +222,66 @@ fun SectionLabel(
     }
 }
 
-/** 空状态：自绘插画 + 两句文案 + 文字按钮 */
+/** 一枚安静的文字按钮，外套 44dp 点击热区。 */
+@Composable
+fun TextAction(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = Zhuri.colors.accent,
+    fontSize: Int = 11
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            fontSize = fontSize.sp,
+            fontWeight = FontWeight.Medium,
+            color = color
+        )
+    }
+}
+
+/** 空状态：自绘插画 + 两句文案 + 文字按钮。[illustration] 可替换插画。 */
 @Composable
 fun EmptyState(
     title: String,
     subtitle: String,
     actionText: String,
     onAction: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    illustration: (@Composable () -> Unit)? = null
 ) {
     val colors = Zhuri.colors
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Canvas(Modifier.size(84.dp)) {
-            val s = size.minDimension
-            val c = Offset(s / 2f, s / 2f)
-            drawCircle(colors.accentSoft, radius = s * 0.42f, center = c)
-            val path = Path().apply {
-                moveTo(s * 0.34f, s * 0.52f)
-                lineTo(s * 0.46f, s * 0.64f)
-                lineTo(s * 0.68f, s * 0.38f)
+        if (illustration != null) {
+            illustration()
+        } else {
+            Canvas(Modifier.size(84.dp)) {
+                val s = size.minDimension
+                val c = Offset(s / 2f, s / 2f)
+                drawCircle(colors.accentSoft, radius = s * 0.42f, center = c)
+                val path = Path().apply {
+                    moveTo(s * 0.34f, s * 0.52f)
+                    lineTo(s * 0.46f, s * 0.64f)
+                    lineTo(s * 0.68f, s * 0.38f)
+                }
+                drawPath(
+                    path = path,
+                    color = colors.accent,
+                    style = Stroke(width = s * 0.045f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                )
+                drawCircle(colors.accent, radius = s * 0.022f, center = Offset(s * 0.74f, s * 0.26f))
+                drawCircle(colors.accent, radius = s * 0.014f, center = Offset(s * 0.24f, s * 0.34f))
             }
-            drawPath(
-                path = path,
-                color = colors.accent,
-                style = Stroke(width = s * 0.045f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-            )
-            drawCircle(colors.accent, radius = s * 0.022f, center = Offset(s * 0.74f, s * 0.26f))
-            drawCircle(colors.accent, radius = s * 0.014f, center = Offset(s * 0.24f, s * 0.34f))
         }
         Spacer(Modifier.height(16.dp))
         Text(text = title, fontSize = 17.sp, fontWeight = FontWeight.Medium, color = colors.ink)

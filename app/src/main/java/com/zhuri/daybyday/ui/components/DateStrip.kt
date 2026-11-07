@@ -1,5 +1,7 @@
 package com.zhuri.daybyday.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,9 +20,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,8 +66,22 @@ fun DateStrip(
             val mark = markFor(date)
 
             val shape = RoundedCornerShape(18.dp)
-            val background = if (isSelected) colors.ink else colors.surface.copy(alpha = 0f)
-            val borderColor = if (!isSelected && isToday) colors.accent.copy(alpha = 0.42f) else background
+            val background by animateColorAsState(
+                targetValue = if (isSelected) colors.ink else Color.Transparent,
+                animationSpec = tween(180),
+                label = "dateBg"
+            )
+            val borderColor by animateColorAsState(
+                targetValue = if (!isSelected && isToday) {
+                    colors.accent.copy(alpha = 0.42f)
+                } else if (isSelected) {
+                    colors.ink
+                } else {
+                    Color.Transparent
+                },
+                animationSpec = tween(180),
+                label = "dateBorder"
+            )
 
             Column(
                 modifier = Modifier

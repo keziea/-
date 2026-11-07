@@ -1,4 +1,4 @@
-import json, datetime, random
+import json, datetime, random, sys
 
 random.seed(7)
 today = datetime.date.today()
@@ -57,9 +57,62 @@ while d <= today:
             done.append(f'{t["id"]}|{d.isoformat()}')
     d += datetime.timedelta(days=1)
 
-out = {"version": 1, "tasks": tasks, "done": sorted(done)}
-with open("E:/AndroidDev/zhuri_data.json", "w", encoding="utf-8") as f:
+notes = [
+    (0, "21:10", "傍晚的风", "下班路上闻到桂花，绕远走了十分钟。天暗得比上周早了，风里有那种干净的凉。"),
+    (0, "08:20", "早起", "六点半醒了一次，没赖床。煮了咖啡，把昨天没读完的那页读完了。"),
+    (1, "22:05", "一件小事", "把厨房台面彻底擦了一遍。没什么理由，就是突然想让明天早上看到它的时候舒服一点。"),
+    (2, "20:40", "慢一点", "今天效率不高，但也没有责怪自己。晚上把手机放远，读完了一章书。"),
+    (3, "21:30", None, "地铁上看到一个小孩趴在窗边数灯，数到第七盏的时候到站了。他妈妈说下次再数，他认真地点了点头。"),
+    (4, "19:55", "周末的菜市场", "买了两把青菜和一小束雏菊。摊主说雏菊好养，换水就行。回家插在玻璃瓶里，桌子一下就不一样了。"),
+    (5, "23:10", "雨", "雨从下午开始下，没带伞，在便利店门口站了十分钟。后来决定走回去，鞋湿了，但心情不坏。"),
+    (6, "21:00", None, "把拖了很久的那封邮件发了。发送之前改了四遍，发出去以后反而很平静。"),
+    (7, "22:40", "一锅汤", "第一次自己炖番茄牛腩，盐放少了，但喝到最后还是见底。下次记得多炖半小时。"),
+    (8, "20:15", "散步", "吃完晚饭下楼走了两圈。小区里有人在练萨克斯，吹得不太熟，但很好听。"),
+    (9, "23:20", "今天有点累", "没做什么大事，就是一直被打断。睡前把明天最重要的三件事写下来了，心里稳一点。"),
+    (10, "21:45", "读到一句", "「日子是过以后，不是过从前。」合上书的时候，窗外正好有风。"),
+    (11, "19:30", "周五", "下班路上买了半只烤鸭。回家和家里人视频，聊了四十分钟，都是些没什么用的小事。"),
+    (13, "22:00", "整理相册", "翻到去年秋天在山上拍的照片。那天雾很大，什么都没看清，但记得当时很高兴。"),
+    (15, "20:50", None, "把阳台上的枯叶剪掉了。新长出来的那两片很小，但颜色很好看。"),
+    (17, "23:05", "晚归", "加班到九点，路上买了一个热乎的红薯。到家以后发现猫把我的笔碰掉在地上，捡起来还能写。"),
+    (20, "21:25", "一封回信", "给很久没联系的朋友回了消息。打字删删改改，最后只发了一句「最近怎么样」。她很快回了。"),
+    (23, "19:10", "换季", "把厚被子拿出来晒了。阳光很好，拍上去有那种蓬松的声音。"),
+    (27, "22:30", "第一杯热美式", "天气转凉，第一次点了热美式。苦味比冰的明显，但握在手里很舒服。"),
+    (31, "20:00", "开始", "决定从这个月开始每天写一点。不用写很多，真实就好。"),
+    (36, "21:15", "周末下午", "在书店坐了一下午，什么也没买。看别人翻书、聊天、打瞌睡，也觉得挺有意思。"),
+]
+
+def classify(title, content):
+    text = (title or "") + content
+    if any(k in text for k in ("邮件", "工作", "加班", "效率", "会议", "周报")):
+        return "WORK"
+    if any(k in text for k in ("读", "书", "章", "一句")):
+        return "STUDY"
+    if any(k in text for k in ("菜市场", "厨房", "阳台", "猫", "红薯", "散步", "被子", "咖啡")):
+        return "LIFE"
+    if any(k in text for k in ("雨", "风", "累", "决定", "想", "平静", "高兴")):
+        return "IDEA"
+    return "OTHER"
+
+
+entries = []
+for i, (offset, hm, title, content) in enumerate(notes):
+    day = today - datetime.timedelta(days=offset)
+    hour, minute = map(int, hm.split(":"))
+    created = datetime.datetime.combine(day, datetime.time(hour, minute))
+    ts = int(created.timestamp() * 1000)
+    entries.append(dict(
+        id=f"e{i + 1}",
+        title=title or "",
+        content=content,
+        date=day.isoformat(),
+        category=classify(title, content),
+        createdAt=ts,
+        updatedAt=ts,
+    ))
+
+out = {"version": 1, "tasks": tasks, "done": sorted(done), "entries": entries}
+target = sys.argv[1] if len(sys.argv) > 1 else "zhuri_data.json"
+with open(target, "w", encoding="utf-8") as f:
     json.dump(out, f, ensure_ascii=False, indent=1)
 
-print("tasks:", len(tasks), "done:", len(done))
-print("today:", today, "keys:", [k for k in done if k.endswith(today.isoformat())])
+print("tasks:", len(tasks), "done:", len(done), "entries:", len(entries), "->", target)

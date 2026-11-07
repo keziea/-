@@ -1,5 +1,14 @@
 package com.zhuri.daybyday.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,15 +65,28 @@ fun CalendarScreen(
 ) {
     val colors = Zhuri.colors
     var cursor by remember { mutableStateOf(YearMonth.from(selected)) }
+    val todayMonth = remember(today) { YearMonth.from(today) }
+    val showToday = cursor != todayMonth || selected != today
 
-    val markFor: (LocalDate) -> DayMark = { d ->
-        val list = tasks.filter { it.occursOn(d) }
-        if (list.isEmpty()) {
-            DayMark()
-        } else {
-            val doneCount = list.count { doneKey(it.id, d) in done }
-            DayMark(count = list.size, allDone = doneCount == list.size)
+    // 42 个格子的状态一次算好，翻月 / 勾选时不再逐格过滤任务
+    val marks = remember(tasks, done, cursor) {
+        val first = LocalDate.of(cursor.year, cursor.monthValue, 1)
+        val gridStart = first.minusDays((first.dayOfWeek.value - 1).toLong())
+        val map = HashMap<LocalDate, DayMark>(48)
+        for (i in 0 until 42) {
+            val d = gridStart.plusDays(i.toLong())
+            val list = tasks.filter { it.occursOn(d) }
+            map[d] = if (list.isEmpty()) {
+                DayMark()
+            } else {
+                val doneCount = list.count { doneKey(it.id, d) in done }
+                DayMark(count = list.size, allDone = doneCount == list.size)
+            }
         }
+        map
+    }
+    val markFor = remember(marks) {
+        { d: LocalDate -> marks[d] ?: DayMark() }
     }
 
     val dayTasks = remember(tasks, done, selected) {
@@ -101,9 +123,50 @@ fun CalendarScreen(
                     text = monthCn(cursor.monthValue),
                     style = Zhuri.type.h1,
                     color = colors.ink,
-                    modifier = Modifier.clickable { cursor = YearMonth.now() }
+                    modifier = Modifier.clickable {
+                        cursor = todayMonth
+                        onSelect(today)
+                    }
                 )
             }
+
+            AnimatedVisibility(
+                visible = showToday,
+                enter = fadeIn(tween(160)) +
+                    slideInHorizontally(tween(200)) { it / 3 } +
+                    expandHorizontally(tween(200), expandFrom = Alignment.End),
+                exit = fadeOut(tween(120)) +
+                    shrinkHorizontally(tween(160), shrinkTowards = Alignment.End)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(colors.surfaceAlt)
+                        .clickable(
+                            onClickLabel = "回到今天",
+                            onClick = {
+                                cursor = todayMonth
+                                onSelect(today)
+                            }
+                        )
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        Modifier
+                            .size(5.dp)
+                            .clip(CircleShape)
+                            .background(colors.accent)
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    Text(
+                        text = "今天",
+                        fontSize = 11.sp,
+                        color = colors.accent
+                    )
+                }
+            }
+            Spacer(Modifier.width(8.dp))
             CircleIconButton(direction = -1) {
                 cursor = cursor.minusMonths(1)
             }
@@ -116,18 +179,30 @@ fun CalendarScreen(
         WeekHeader(modifier = Modifier.padding(horizontal = 22.dp))
         Spacer(Modifier.height(4.dp))
 
-        MonthGrid(
-            year = cursor.year,
-            month = cursor.monthValue,
-            selected = selected,
-            today = today,
-            markFor = markFor,
-            onSelect = { d ->
-                cursor = YearMonth.from(d)
-                onSelect(d)
+        AnimatedContent(
+            targetState = cursor,
+            transitionSpec = {
+                val forward = targetState > initialState
+                (
+                    fadeIn(tween(180)) +
+                        slideInHorizontally(tween(220)) { if (forward) it / 8 else -it / 8 }
+                    ).togetherWith(fadeOut(tween(120)))
             },
-            modifier = Modifier.padding(horizontal = 14.dp)
-        )
+            label = "month"
+        ) { month ->
+            MonthGrid(
+                year = month.year,
+                month = month.monthValue,
+                selected = selected,
+                today = today,
+                markFor = markFor,
+                onSelect = { d ->
+                    cursor = YearMonth.from(d)
+                    onSelect(d)
+                },
+                modifier = Modifier.padding(horizontal = 14.dp)
+            )
+        }
 
         Spacer(Modifier.height(10.dp))
 
@@ -166,7 +241,7 @@ fun CalendarScreen(
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 132.dp)
+                contentPadding = PaddingValues(bottom = 160.dp)
             ) {
                 items(dayTasks, key = { it.id }) { task ->
                     val isDone = doneKey(task.id, selected) in done

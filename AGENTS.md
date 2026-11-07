@@ -2,7 +2,7 @@
 
 > 本文件是**唯一入口**。任何 AI / 开发者接手本项目，只需读完本文件，就能知道：
 > 这是什么、代码在哪、按什么顺序读分层文档、怎么把它编译成 APK。
-> 最后更新：2026-11-07 · 版本 v1.1
+> 最后更新：2026-11-07 · 版本 v1.3
 
 ---
 
@@ -10,7 +10,7 @@
 
 **「逐日」是一款纯本地、零广告、零账号的安卓待办与坚持记录 App。**
 你可以提前给某一天安排任务（写名字、可选写详情、可选时间），给任务设置「不重复 / 每天 / 每周几 / 每月某日」，
-打开 App 勾一下就算完成，最后在「总结」页看到自己的连续天数、每日完成度与近 8 周热力图。
+打开 App 勾一下就算完成；也可以写两笔笔记，最后在「总结」页看到自己的连续天数、每日完成度、近 8 周热力与写作轨迹。
 
 设计目标排序：**好看 > 顺手 > 功能多**。功能刻意克制，只做「安排 + 完成 + 复盘」这一条主链路。
 
@@ -24,11 +24,11 @@
 | 构建 | Gradle | 8.13 | 装在 `E:\AndroidDev\gradle-8.13` |
 | JDK | Temurin JDK 17 | 17.0.20.1+1 | 装在 `E:\AndroidDev\jdk-17.0.20.1+1` |
 | SDK | Android SDK Platform | compileSdk / targetSdk = 36 | `D:\Android\SDK` |
-| 最低版本 | minSdk | 26（Android 8.0） | 原生 java.time，覆盖 99.9% 在用机型 |
+| 最低版本 | minSdk | 23（Android 6.0） | core library desugaring 提供 java.time，兼容 MuMu 6 等旧模拟器 |
 | 存储 | 本地 JSON 文件 | org.json（系统内置） | 无数据库、无网络、无权限 |
 | 架构 | 单 Activity + StateFlow + Compose State | — | 无 ViewModel 框架、无 DI 框架 |
 
-**依赖清单（全部）**：`core-ktx`、`activity-compose`、`lifecycle-runtime-compose`、`compose.ui`、`compose.material3`。
+**依赖清单（全部）**：`core-ktx`、`activity-compose`、`lifecycle-runtime-compose`、`compose.ui`、`compose.material3`，以及编译期 `desugar_jdk_libs`（用于 java.time 脱糖）。
 没有 Room / Hilt / Navigation / Retrofit / Coil / 图标扩展包。APK 体积就是这个量级。
 
 ## 3. 顶层目录地图
@@ -49,23 +49,26 @@
 │       ├── java/com/zhuri/daybyday/
 │       │   ├── MainActivity.kt          ← 唯一 Activity，edge-to-edge 入口
 │       │   ├── ZhuriApp.kt              ← Application，持有唯一 Repository
-│       │   ├── model/Task.kt            ← 数据模型 + 重复规则判定
+│       │   ├── model/Task.kt            ← 任务模型 + 重复规则判定
+│       │   ├── model/Diary.kt           ← 笔记模型 + 写作统计（连续 / 热力）
 │       │   ├── data/TaskRepository.kt   ← StateFlow 状态 + JSON 持久化
 │       │   ├── util/Dates.kt            ← 日期工具、中文格式化
 │       │   └── ui/
 │       │       ├── theme/Theme.kt        ← 色板 / 字体 / 圆角 / 动效令牌
-│       │       ├── Root.kt              ← 根容器：三个 Tab + 悬浮导航 + FAB
-│       │       ├── TodayScreen.kt       ← 今日（日期条 + 清单）
+│       │       ├── Root.kt              ← 根容器：四个 Tab + 自适应内容列 + 导航 + FAB
+│       │       ├── TodayScreen.kt       ← 今日（日期条 + 清单 + 当天笔记）
 │       │       ├── CalendarScreen.kt    ← 日历（月视图 + 当天清单）
-│       │       ├── StatsScreen.kt       ← 总结（连续天数 / 柱状 / 热力图）
+│       │       ├── DiaryScreen.kt       ← 笔记（时间轴 + 写作统计入口）
+│       │       ├── DiaryEditor.kt       ← 笔记编辑器（沉浸式底部抽屉）
+│       │       ├── StatsScreen.kt       ← 总结（任务统计 + 写作统计）
 │       │       ├── EditorSheet.kt       ← 任务编辑器（底部抽屉）
 │       │       └── components/          ← 复用组件（见 03 文档）
 │       └── res/                         ← 主题、图标、字符串
 ├── artifacts/                   ← 构建产物（APK）与验收截图
-│   ├── 逐日-v1.1.apk
-│   └── screenshots/             ← 今日 / 日历 / 总结 / 编辑器 / 暗色
+│   ├── 逐日-v1.3.apk
+│   └── screenshots/             ← 今日 / 日历 / 笔记 / 总结 / 编辑器 / 暗色 / 平板
 ├── scripts/
-│   └── seed_demo.py             ← 生成演示数据（造 88 条完成记录），用于截图与统计校验
+│   └── seed_demo.py             ← 生成演示数据（任务 + 笔记），用于截图与统计校验
 ├── signing/zhuri-release.jks    ← Release 签名密钥（密码见 docs/01 第 6 节）
 └── .workbuddy/memory/           ← 会话记忆（AI 用，非代码）
 ```
@@ -112,14 +115,14 @@ gradle assembleDebug --no-daemon
 ```bash
 cd "D:/vibeCoding/工作安排软件"
 gradle assembleRelease --no-daemon
-# 产物：app/build/outputs/apk/release/app-release.apk → 复制到 artifacts/逐日-v1.1.apk
+# 产物：app/build/outputs/apk/release/app-release.apk → 复制到 artifacts/逐日-v1.3.apk
 ```
 
 安装到已连接的设备 / 模拟器：
 
 ```bash
 export MSYS_NO_PATHCONV=1   # Git Bash 下必须，否则 /data/... 会被转成 Windows 路径
-/d/Android/SDK/platform-tools/adb.exe install -r artifacts/逐日-v1.1.apk
+/d/Android/SDK/platform-tools/adb.exe install -r artifacts/逐日-v1.3.apk
 /d/Android/SDK/platform-tools/adb.exe shell am start -n com.zhuri.daybyday/.MainActivity
 ```
 
@@ -143,19 +146,26 @@ export MSYS_NO_PATHCONV=1   # Git Bash 下必须，否则 /data/... 会被转成
 6. **暗色模式必须同步可用**：每个新颜色都要给出 light / dark 两套值。
 7. **中文文案**：全部面向用户的字符串写中文，不出现「未命名项目」这类占位词。
 
-## 7. 当前状态（v1.1）
+## 7. 当前状态（v1.3）
 
 | 项 | 状态 |
 |---|---|
-| 今日清单（日期条 + 勾选 + 详情展示） | ✅ |
+| 今日清单（日期条 + 勾选 + 详情展示 + 当天笔记） | ✅ |
 | 任务编辑（标题 / 详情 / 日期 / 重复 / 时间） | ✅ |
 | 重复规则（不重复 / 每天 / 每周几 / 每月某日） | ✅ |
-| 日历月视图（有任务的日期打点） | ✅ |
+| 日历月视图（有任务的日期打点 + 回到今天 + 翻月动画） | ✅ |
+| 笔记（按日分组、一天多篇、可起标题、补记最近 7 天） | ✅ |
 | 总结页（连续天数 / 今日 / 平均 / 累计 / 近 7 天柱状 / 近 8 周热力） | ✅ |
+| 写作统计（篇数 / 字数 / 写作天数 / 连续 / 最长 / 12 周热力） | ✅ |
+| 四栏悬浮导航 + 转场 / 按压缩放动效 | ✅ |
+| 手机 / 平板自适应（内容 720dp 居中，导航与 FAB 跟随） | ✅ |
+| 旧设备兼容（minSdk 23，MuMu 6 / Android 6+） | ✅ |
 | 暗色模式跟随系统 | ✅ |
 | 本地 JSON 持久化 + 原子写入 | ✅ |
 | 品牌图标（自适应 + Android 13 主题图标单色层） | ✅ |
 | 启动动画（620ms 日升，系统启动画面无缝衔接） | ✅ |
+| 每日笔记（同一天多篇 / 五类标签 / 分类筛选） | ✅ |
+| 笔记统计（篇数、字数、连续天数、分类占比、12 周热力图） | ✅ |
 | Release APK（R8 + 签名） | ✅ |
 
 ## 8. 远程仓库

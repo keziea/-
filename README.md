@@ -1,7 +1,7 @@
 # 逐日 · Day by Day
 
 > 一款纯本地、零广告、零账号的安卓待办与坚持记录 App。
-> 提前给某一天安排任务，勾掉它，然后看见自己坚持了多久。
+> 提前给某一天安排任务，勾掉它；再写两笔笔记，然后看见自己坚持了多久。
 
 <!-- 截图 -->
 <p align="center">
@@ -10,24 +10,33 @@
 
 <p align="center">
   <img src="artifacts/screenshots/01-今日.png" width="240" alt="今日"/>
-  <img src="artifacts/screenshots/02-日历.png" width="240" alt="日历"/>
+  <img src="artifacts/screenshots/06-笔记.png" width="240" alt="笔记"/>
   <img src="artifacts/screenshots/03-总结.png" width="240" alt="总结"/>
+</p>
+
+<p align="center">
+  <img src="artifacts/screenshots/13-平板-今日.png" width="380" alt="平板 · 今日"/>
+  <img src="artifacts/screenshots/14-平板-总结.png" width="380" alt="平板 · 总结"/>
 </p>
 
 ## 特点
 
 - **不用注册、不联网**：APK 里连 `INTERNET` 权限都没有，数据只存在自己手机里
-- **提前安排**：日期条能滑到 45 天后，日历能翻任意月份
+- **提前安排**：日期条能滑到 45 天后，日历能翻任意月份；翻远了有一枚「今天」按钮直接跳回
 - **会重复**：不重复 / 每天 / 每周几 / 每月某日
-- **看得见坚持**：连续天数、30 天平均完成度、近 7 天柱状图、近 8 周日历热力图
-- **小**：Release 包 1.3MB，冷启动 ~0.4s
-- **好看**：暖纸底色 + 单一赤陶强调色，自绘图标与启动动画，支持深色模式与 Android 13 主题图标
+- **每天可写笔记**：一天多篇、标题可空、最近 7 天可补记；五类标签（想法 / 生活 / 工作 / 学习 / 其他）可筛选；不写也不影响任务连续
+- **看得见坚持**：任务连续天数、30 天平均完成度、近 7 天柱状图、近 8 周热力图；笔记篇数、字数、写作连续与 12 周写作热力、分类占比
+- **小**：Release 包 1.5MB，冷启动 ~0.4s
+- **好认**：日程是赤陶色 + 圆形勾选，笔记是冷灰绿 + 衬线标题 + 分类圆点，一眼分得开
+- **好看**：暖纸底色、自绘图标与启动动画，支持深色模式与 Android 13 主题图标
+- **自适应**：手机铺满、平板 / 横屏居中限宽，导航与悬浮按钮跟随内容边界，320dp 到 1066dp 都试过
 
 ## 安装
 
-从 [`artifacts/逐日-v1.1.apk`](artifacts/逐日-v1.1.apk) 下载，传到手机安装即可。
+从 [`artifacts/逐日-v1.4.apk`](artifacts/逐日-v1.4.apk) 下载，传到手机安装即可。
+已在 MuMu（Android 15 / x86_64）实测安装启动；最低覆盖 Android 6.0。
 
-- 最低系统：Android 8.0（API 26）
+- 最低系统：Android 6.0（API 23；`java.time` 已脱糖）
 - 目标系统：Android 16（API 36）
 - 首次安装需要允许「安装未知来源应用」
 
@@ -41,7 +50,8 @@
 | 存储 | 本地 JSON（原子写入），无数据库、无网络 |
 | 架构 | 单 Activity + StateFlow + Compose State |
 
-依赖只有五个：`core-ktx`、`activity-compose`、`lifecycle-runtime-compose`、`compose.ui`、`compose.material3`。
+运行时依赖只有五个：`core-ktx`、`activity-compose`、`lifecycle-runtime-compose`、`compose.ui`、`compose.material3`；
+另加编译期 `desugar_jdk_libs`，让 Android 6/7 也能用 `java.time`。
 没有 Room、没有 Hilt、没有 Navigation、没有图标扩展包——图标全部用 Canvas / VectorDrawable 自绘。
 
 ## 自己编译
@@ -87,9 +97,10 @@ keyPassword=******
 ├── AGENTS.md              # 总操作文档（先读这个）
 ├── docs/                  # 分层文档
 ├── app/src/main/java/com/zhuri/daybyday/
-│   ├── model/Task.kt          # 数据模型 + 重复规则
+│   ├── model/Task.kt          # 任务模型 + 重复规则
+│   ├── model/Diary.kt         # 笔记模型 + 写作统计
 │   ├── data/TaskRepository.kt # 状态 + JSON 持久化
-│   ├── ui/                    # 今日 / 日历 / 总结 / 编辑器 / 启动动画
+│   ├── ui/                    # 今日 / 日历 / 笔记 / 总结 / 编辑器 / 启动动画
 │   └── ui/theme/Theme.kt      # 设计令牌（唯一颜色来源）
 ├── artifacts/             # 安装包与截图
 └── scripts/               # 演示数据生成、图标预览渲染

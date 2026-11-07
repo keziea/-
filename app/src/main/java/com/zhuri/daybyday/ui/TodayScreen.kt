@@ -121,8 +121,6 @@ fun TodayScreen(
                 date = date,
                 today = today,
                 rate = rate,
-                completedCount = completed.size,
-                totalCount = dayTasks.size,
                 showJump = stripDisplaced,
                 onBackToToday = {
                     onSelectDate(today)
@@ -140,6 +138,22 @@ fun TodayScreen(
                 resetSignal = jumpSignal,
                 onDisplacedChange = { stripDisplaced = it }
             )
+        }
+
+        item(key = "header_schedule") {
+            SectionLabel(
+                text = "日程",
+                dotColor = colors.accent,
+                modifier = Modifier
+                    .padding(horizontal = 22.dp)
+                    .padding(top = 18.dp, bottom = 2.dp)
+            ) {
+                Text(
+                    text = if (dayTasks.isEmpty()) "还没安排" else "完成 ${completed.size} / ${dayTasks.size}",
+                    fontSize = 10.sp,
+                    color = colors.ink3
+                )
+            }
         }
 
         if (dayTasks.isEmpty()) {
@@ -228,8 +242,6 @@ private fun DateHeader(
     date: LocalDate,
     today: LocalDate,
     rate: Float,
-    completedCount: Int,
-    totalCount: Int,
     showJump: Boolean,
     onBackToToday: () -> Unit
 ) {
@@ -292,18 +304,6 @@ private fun DateHeader(
                         }
                     }
                 }
-            }
-            if (totalCount > 0) {
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = if (completedCount == totalCount) {
-                        "$totalCount 件全部完成 · 漂亮"
-                    } else {
-                        "完成 $completedCount / $totalCount 件"
-                    },
-                    fontSize = 12.sp,
-                    color = colors.ink3
-                )
             }
         }
 

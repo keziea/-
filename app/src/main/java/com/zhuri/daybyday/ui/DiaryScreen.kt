@@ -587,6 +587,7 @@ fun DiaryTodaySection(
     Column(modifier = modifier.fillMaxWidth()) {
         SectionLabel(
             text = if (dayEntries.isEmpty()) "笔记" else "笔记 ${dayEntries.size}",
+            dotColor = colors.note,
             modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp)
         ) {
             if (dayEntries.isNotEmpty()) {

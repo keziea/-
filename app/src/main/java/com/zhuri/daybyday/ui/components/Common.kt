@@ -203,12 +203,22 @@ fun ZChip(
 fun SectionLabel(
     text: String,
     modifier: Modifier = Modifier,
+    dotColor: Color? = null,
     trailing: (@Composable RowScope.() -> Unit)? = null
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (dotColor != null) {
+            Box(
+                Modifier
+                    .size(5.dp)
+                    .clip(CircleShape)
+                    .background(dotColor)
+            )
+            Spacer(Modifier.width(7.dp))
+        }
         Text(
             text = text,
             style = Zhuri.type.label,

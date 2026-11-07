@@ -33,7 +33,7 @@
 
 ## 安装
 
-从 [`artifacts/逐日-v1.5.apk`](artifacts/逐日-v1.5.apk) 下载，传到手机安装即可。
+从 [`artifacts/逐日-v1.6.apk`](artifacts/逐日-v1.6.apk) 下载，传到手机安装即可。
 已在 MuMu（Android 15 / x86_64）实测安装启动；最低覆盖 Android 6.0。
 
 - 最低系统：Android 6.0（API 23；`java.time` 已脱糖）

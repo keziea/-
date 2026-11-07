@@ -580,24 +580,36 @@ private fun DiaryStatsCard(stats: DiaryStats, today: LocalDate, onOpen: () -> Un
                     }
                 }
                 Spacer(Modifier.height(9.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    stats.byCategory.entries.sortedByDescending { it.value }.forEach { (c, n) ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier
-                                    .size(5.dp)
-                                    .clip(CircleShape)
-                                    .background(noteTint(c))
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = "$c $n",
-                                fontSize = 9.sp,
-                                color = colors.ink3
-                            )
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val ordered = stats.byCategory.entries.sortedByDescending { it.value }
+                    ordered.chunked(3).forEach { rowItems ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            rowItems.forEach { (c, n) ->
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        Modifier
+                                            .size(5.dp)
+                                            .clip(CircleShape)
+                                            .background(noteTint(c))
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = "$c $n",
+                                        fontSize = 9.sp,
+                                        color = colors.ink3,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                            repeat(3 - rowItems.size) {
+                                Spacer(Modifier.weight(1f))
+                            }
                         }
                     }
                 }

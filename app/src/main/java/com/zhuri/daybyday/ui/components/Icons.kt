@@ -250,6 +250,28 @@ fun IconPen(color: Color, modifier: Modifier = Modifier, stroke: Dp = 1.8.dp) {
     }
 }
 
+/** 搜索：圆 + 手柄 */
+@Composable
+fun IconSearch(color: Color, modifier: Modifier = Modifier, stroke: Dp = 1.8.dp) {
+    Canvas(modifier) {
+        val s = size.minDimension
+        val sw = stroke.toPx()
+        drawCircle(
+            color = color,
+            radius = s * 0.30f,
+            center = Offset(s * 0.44f, s * 0.44f),
+            style = Stroke(sw)
+        )
+        drawLine(
+            color,
+            Offset(s * 0.65f, s * 0.65f),
+            Offset(s * 0.84f, s * 0.84f),
+            sw,
+            StrokeCap.Round
+        )
+    }
+}
+
 /** 垃圾桶：盖 + 桶身 + 一条竖线 */
 @Composable
 fun IconTrash(color: Color, modifier: Modifier = Modifier, stroke: Dp = 1.6.dp) {

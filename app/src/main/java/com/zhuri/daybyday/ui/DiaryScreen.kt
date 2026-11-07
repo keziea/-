@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -45,9 +47,13 @@ import androidx.compose.ui.unit.sp
 import com.zhuri.daybyday.model.DiaryEntry
 import com.zhuri.daybyday.model.DiaryStats
 import com.zhuri.daybyday.model.onDate
+import com.zhuri.daybyday.ui.components.CategoryPickerSheet
+import com.zhuri.daybyday.ui.components.CategoryPill
 import com.zhuri.daybyday.ui.components.EmptyState
+import com.zhuri.daybyday.ui.components.IconClose
 import com.zhuri.daybyday.ui.components.IconPen
 import com.zhuri.daybyday.ui.components.IconPlus
+import com.zhuri.daybyday.ui.components.IconSearch
 import com.zhuri.daybyday.ui.components.SectionLabel
 import com.zhuri.daybyday.ui.components.TextAction
 import com.zhuri.daybyday.ui.components.ZChip
@@ -94,8 +100,16 @@ fun DiaryScreen(
 ) {
     val colors = Zhuri.colors
     var category by remember { mutableStateOf<String?>(null) }
-    val shown = remember(entries, category) {
-        if (category == null) entries else entries.filter { it.category == category }
+    var query by remember { mutableStateOf("") }
+    var showPicker by remember { mutableStateOf(false) }
+    val shown = remember(entries, category, query) {
+        val q = query.trim()
+        entries.filter { entry ->
+            (category == null || entry.category == category) &&
+                (q.isEmpty() ||
+                    entry.title.contains(q, ignoreCase = true) ||
+                    entry.content.contains(q, ignoreCase = true))
+        }
     }
     val days = remember(shown) { buildDays(shown) }
     val countsByCategory = remember(entries) { entries.groupingBy { it.category }.eachCount() }
@@ -146,28 +160,33 @@ fun DiaryScreen(
 
         if (entries.isNotEmpty()) {
             item(key = "diary_filters") {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
                         .padding(horizontal = 22.dp)
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(bottom = 10.dp)
                 ) {
-                    ZChip(
-                        text = "全部 ${entries.size}",
-                        selected = category == null,
-                        onClick = { category = null }
+                    DiarySearchField(
+                        query = query,
+                        onQueryChange = { query = it },
+                        onClear = { query = "" }
                     )
-                    categories.forEach { c ->
-                        val count = countsByCategory[c] ?: 0
-                        if (count > 0) {
-                            ZChip(
-                                text = "$c $count",
-                                selected = category == c,
-                                onClick = { category = c }
-                            )
-                        }
+                    Spacer(Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CategoryPill(
+                            text = category ?: "全部分类",
+                            onClick = { showPicker = true }
+                        )
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            text = if (query.isBlank() && category == null) {
+                                "${entries.size} 篇"
+                            } else {
+                                "筛出 ${shown.size} 篇"
+                            },
+                            fontSize = 10.sp,
+                            color = colors.ink3
+                        )
                     }
                 }
             }
@@ -192,7 +211,21 @@ fun DiaryScreen(
                         .padding(top = 48.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("这个分类还没有笔记", fontSize = 13.sp, color = colors.ink3)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = if (query.isNotBlank()) "没有找到「${query.trim()}」" else "这个分类还没有笔记",
+                            fontSize = 13.sp,
+                            color = colors.ink3
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        TextAction(
+                            text = "清除筛选",
+                            onClick = {
+                                query = ""
+                                category = null
+                            }
+                        )
+                    }
                 }
             }
         } else {
@@ -229,6 +262,62 @@ fun DiaryScreen(
                         color = colors.ink3.copy(alpha = 0.8f)
                     )
                 }
+            }
+        }
+    }
+
+    if (showPicker) {
+        CategoryPickerSheet(
+            categories = categories,
+            selected = category,
+            counts = countsByCategory,
+            onSelect = { category = it },
+            onDismiss = { showPicker = false }
+        )
+    }
+}
+
+@Composable
+private fun DiarySearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onClear: () -> Unit
+) {
+    val colors = Zhuri.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(40.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(colors.surfaceAlt)
+            .padding(horizontal = 13.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconSearch(colors.ink3, Modifier.size(14.dp), 1.6.dp)
+        Spacer(Modifier.width(8.dp))
+        BasicTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            singleLine = true,
+            textStyle = Zhuri.type.bodySm.copy(fontSize = 13.sp, color = colors.ink),
+            cursorBrush = SolidColor(colors.accent),
+            modifier = Modifier.weight(1f),
+            decorationBox = { inner ->
+                if (query.isEmpty()) {
+                    Text("搜索标题或正文", fontSize = 13.sp, color = colors.ink3)
+                }
+                inner()
+            }
+        )
+        if (query.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onClear),
+                contentAlignment = Alignment.Center
+            ) {
+                IconClose(colors.ink3, Modifier.size(10.dp))
             }
         }
     }

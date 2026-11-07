@@ -181,14 +181,16 @@ fun Root(repo: TaskRepository) {
                     onOpenTask = { openTask(it) }
                 )
 
-                2 -> DiaryScreen(
-                    entries = entries,
-                    categories = categories,
-                    today = today,
-                    stats = diaryStats,
-                    onOpen = { openDiary(it) },
-                    onAdd = { openNewDiary(today) }
-                )
+                2 -> AdaptiveContent(maxWidth = 560.dp) {
+                    DiaryScreen(
+                        entries = entries,
+                        categories = categories,
+                        today = today,
+                        stats = diaryStats,
+                        onOpen = { openDiary(it) },
+                        onAdd = { openNewDiary(today) }
+                    )
+                }
 
                 else -> StatsScreen(
                     tasks = tasks,

@@ -48,6 +48,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.zhuri.daybyday.model.DiaryEntry
+import com.zhuri.daybyday.ui.components.CategoryPickerSheet
+import com.zhuri.daybyday.ui.components.CategoryPill
 import com.zhuri.daybyday.ui.components.ConfirmDialog
 import com.zhuri.daybyday.ui.components.IconClose
 import com.zhuri.daybyday.ui.components.IconTrash
@@ -82,6 +84,7 @@ fun DiaryEditor(
     var date by remember { mutableStateOf(initial?.date ?: initialDate) }
     var category by remember { mutableStateOf(initial?.category ?: categories.firstOrNull() ?: "想法") }
     var showCategories by remember { mutableStateOf(false) }
+    var showPicker by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
@@ -296,20 +299,10 @@ fun DiaryEditor(
                     )
                 }
                 Spacer(Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    categories.forEach { c ->
-                        ZChip(
-                            text = c,
-                            selected = category == c,
-                            onClick = { category = c }
-                        )
-                    }
-                }
+                CategoryPill(
+                    text = category,
+                    onClick = { showPicker = true }
+                )
 
                 Spacer(Modifier.height(20.dp))
                 Text("记在哪一天", style = Zhuri.type.label, color = colors.ink3)
@@ -338,6 +331,19 @@ fun DiaryEditor(
                 Spacer(Modifier.height(28.dp))
             }
         }
+    }
+
+    if (showPicker) {
+        CategoryPickerSheet(
+            categories = categories,
+            selected = category,
+            onSelect = { picked -> if (picked != null) category = picked },
+            onManage = {
+                showPicker = false
+                showCategories = true
+            },
+            onDismiss = { showPicker = false }
+        )
     }
 
     if (showCategories) {

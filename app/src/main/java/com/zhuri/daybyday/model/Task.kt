@@ -75,3 +75,49 @@ fun compareTasks(a: Task, b: Task, aDone: Boolean, bDone: Boolean): Int {
     }
     return a.createdAt.compareTo(b.createdAt)
 }
+
+
+/**
+ * 当前连续完成天数，口径与总结页一致：
+ * 今天没做完就从昨天起算，休息日跳过不计数，遇到未完成的一天即中断。
+ */
+fun currentStreak(tasks: List<Task>, done: Set<String>, today: LocalDate): Int {
+    if (tasks.isEmpty()) return 0
+    fun statOf(date: LocalDate): Pair<Int, Int> {
+        var total = 0
+        var completed = 0
+        for (task in tasks) {
+            if (task.occursOn(date)) {
+                total++
+                if (com.zhuri.daybyday.util.doneKey(task.id, date) in done) completed++
+            }
+        }
+        return total to completed
+    }
+
+    val todayStat = statOf(today)
+    var cursor = if (todayStat.first > 0 && todayStat.second < todayStat.first) {
+        today.minusDays(1)
+    } else {
+        today
+    }
+    val earliest = tasks.minOfOrNull { it.startDate } ?: today
+    var streak = 0
+    var guard = 0
+    while (guard < 3650 && !cursor.isBefore(earliest)) {
+        val (total, completed) = statOf(cursor)
+        if (total == 0) {
+            cursor = cursor.minusDays(1)
+            guard++
+            continue
+        }
+        if (completed >= total) {
+            streak++
+            cursor = cursor.minusDays(1)
+            guard++
+        } else {
+            break
+        }
+    }
+    return streak
+}

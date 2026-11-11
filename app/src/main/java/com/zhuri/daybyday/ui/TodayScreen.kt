@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.zhuri.daybyday.model.DiaryEntry
 import com.zhuri.daybyday.model.Task
 import com.zhuri.daybyday.model.compareTasks
 import com.zhuri.daybyday.ui.components.DateStrip
@@ -58,14 +57,10 @@ fun TodayScreen(
     done: Set<String>,
     date: LocalDate,
     today: LocalDate,
-    diaryEntries: List<DiaryEntry>,
     onSelectDate: (LocalDate) -> Unit,
     onToggle: (Task) -> Unit,
     onOpenTask: (Task) -> Unit,
     onAdd: () -> Unit,
-    onOpenDiary: (DiaryEntry) -> Unit,
-    onNewDiary: (LocalDate) -> Unit,
-    onViewAllDiary: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = Zhuri.colors
@@ -220,21 +215,6 @@ fun TodayScreen(
                             .animateItem()
                     )
                 }
-            }
-        }
-
-        // 未来日期只做安排，不留笔记；笔记是回望，不是预告
-        if (!date.isAfter(today)) {
-            item(key = "diary_today") {
-                DiaryTodaySection(
-                    date = date,
-                    today = today,
-                    entries = diaryEntries,
-                    onOpen = onOpenDiary,
-                    onAdd = { onNewDiary(date) },
-                    onViewAll = onViewAllDiary,
-                    modifier = Modifier.padding(top = 10.dp)
-                )
             }
         }
     }

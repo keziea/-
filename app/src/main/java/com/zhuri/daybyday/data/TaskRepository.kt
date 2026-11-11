@@ -1,6 +1,8 @@
 package com.zhuri.daybyday.data
 
 import android.content.Context
+import com.zhuri.daybyday.model.Achievement
+import com.zhuri.daybyday.model.AchievementCatalog
 import com.zhuri.daybyday.model.DefaultNoteCategories
 import com.zhuri.daybyday.model.DefaultNoteCategory
 import com.zhuri.daybyday.model.DiaryEntry
@@ -50,6 +52,9 @@ class TaskRepository(context: Context) {
     private val _categories = MutableStateFlow(DefaultNoteCategories)
     val categories: StateFlow<List<String>> = _categories.asStateFlow()
 
+    private val _achievements = MutableStateFlow<Set<String>>(emptySet())
+    val achievements: StateFlow<Set<String>> = _achievements.asStateFlow()
+
     init {
         load()
     }
@@ -95,6 +100,15 @@ class TaskRepository(context: Context) {
         persist()
     }
 
+    /** 按当前连续天数解锁奖杯，返回本次新解锁的列表（调用方决定是否庆祝）。 */
+    fun unlockAchievements(streak: Int): List<Achievement> {
+        val newly = AchievementCatalog.filter { streak >= it.days && it.id !in _achievements.value }
+        if (newly.isEmpty()) return emptyList()
+        _achievements.update { it + newly.map { a -> a.id } }
+        persist()
+        return newly
+    }
+
     /** 新增自定义分类；空名、重复名会被忽略并返回 false。 */
     fun addCategory(raw: String): Boolean {
         val name = raw.trim().take(8)
@@ -123,8 +137,11 @@ class TaskRepository(context: Context) {
         val snapshotDone = _done.value
         val snapshotEntries = _entries.value
         val snapshotCategories = _categories.value
+        val snapshotAchievements = _achievements.value
         io.launch {
-            runCatching { write(dataFile, snapshotTasks, snapshotDone, snapshotEntries, snapshotCategories) }
+            runCatching {
+                write(dataFile, snapshotTasks, snapshotDone, snapshotEntries, snapshotCategories, snapshotAchievements)
+            }
         }
     }
 
@@ -133,7 +150,8 @@ class TaskRepository(context: Context) {
         tasks: List<Task>,
         done: Set<String>,
         entries: List<DiaryEntry>,
-        categories: List<String>
+        categories: List<String>,
+        achievements: Set<String>
     ) {
         val root = JSONObject()
         root.put("version", 1)
@@ -178,6 +196,10 @@ class TaskRepository(context: Context) {
         categories.forEach { categoryArray.put(it) }
         root.put("categories", categoryArray)
 
+        val achievementArray = JSONArray()
+        achievements.forEach { achievementArray.put(it) }
+        root.put("achievements", achievementArray)
+
         if (tmpFile.exists()) tmpFile.delete()
         tmpFile.writeText(root.toString())
         if (!tmpFile.renameTo(file)) {
@@ -206,13 +228,15 @@ class TaskRepository(context: Context) {
         _done.value = parsed.done
         _entries.value = parsed.entries
         _categories.value = parsed.categories
+        _achievements.value = parsed.achievements
     }
 
     private data class ParsedData(
         val tasks: List<Task>,
         val done: Set<String>,
         val entries: List<DiaryEntry>,
-        val categories: List<String>
+        val categories: List<String>,
+        val achievements: Set<String>
     )
 
     private fun parse(text: String): ParsedData {
@@ -292,6 +316,13 @@ class TaskRepository(context: Context) {
                 )
             )
         }
-        return ParsedData(tasks, done, entries, categories.toList())
+        val achievements = LinkedHashSet<String>()
+        val achievementArray = root.optJSONArray("achievements")
+        if (achievementArray != null) {
+            for (i in 0 until achievementArray.length()) {
+                achievements.add(achievementArray.optString(i))
+            }
+        }
+        return ParsedData(tasks, done, entries, categories.toList(), achievements)
     }
 }

@@ -39,11 +39,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zhuri.daybyday.model.DiaryEntry
 import com.zhuri.daybyday.model.DiaryHeatDay
+import com.zhuri.daybyday.model.AchievementCatalog
 import com.zhuri.daybyday.model.DiaryStats
 import com.zhuri.daybyday.model.Task
 import com.zhuri.daybyday.ui.components.IconPen
 import com.zhuri.daybyday.ui.components.ProgressRing
 import com.zhuri.daybyday.ui.components.TextAction
+import com.zhuri.daybyday.ui.components.TrophyRow
 import com.zhuri.daybyday.ui.theme.Zhuri
 import com.zhuri.daybyday.ui.theme.noteTint
 import com.zhuri.daybyday.util.dateShort
@@ -174,6 +176,8 @@ fun StatsScreen(
     today: LocalDate,
     diaryStats: DiaryStats,
     categories: List<String>,
+    unlockedAchievements: Set<String>,
+    streak: Int,
     onOpenDiary: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -205,6 +209,7 @@ fun StatsScreen(
         item { ThreeTiles(stats) }
         item { WeekBarCard(stats) }
         item { HeatCard(stats.heat) }
+        item { TrophyCard(unlockedAchievements, streak) }
         item { DiaryStatsCard(diaryStats, categories, today, onOpenDiary) }
     }
 }
@@ -501,6 +506,50 @@ private fun HeatCard(heat: List<List<DayStat>>) {
 
 private val HeatCell = 11.dp
 private val HeatGap = 4.dp
+
+@Composable
+private fun TrophyCard(unlocked: Set<String>, streak: Int) {
+    val colors = Zhuri.colors
+    val next = AchievementCatalog.firstOrNull { it.id !in unlocked }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp)
+            .padding(top = 14.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(colors.surface)
+            .border(1.dp, colors.line, RoundedCornerShape(22.dp))
+            .padding(18.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("奖杯", style = Zhuri.type.label, color = colors.ink3)
+            Spacer(Modifier.weight(1f))
+            Text(
+                "已解锁 ${unlocked.size} / ${AchievementCatalog.size}",
+                fontSize = 10.sp,
+                color = colors.ink3
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "连续完成日程，奖杯会一座座亮起来",
+            fontSize = 11.sp,
+            color = colors.ink3
+        )
+        Spacer(Modifier.height(14.dp))
+        TrophyRow(unlocked = unlocked)
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = if (next == null) {
+                "十座奖杯全部点亮 · 你已经在很前面了"
+            } else {
+                "当前连续 $streak 天 · 下一座「${next.name}」还差 ${(next.days - streak).coerceAtLeast(0)} 天"
+            },
+            fontSize = 10.sp,
+            color = if (next == null) colors.accent else colors.ink3
+        )
+    }
+}
 
 @Composable
 private fun DiaryStatsCard(

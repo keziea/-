@@ -24,8 +24,8 @@ android {
         applicationId = "com.zhuri.daybyday"
         minSdk = 23
         targetSdk = 36
-        versionCode = 13
-        versionName = "2.1"
+        versionCode = 14
+        versionName = "3.0"
         vectorDrawables { useSupportLibrary = true }
     }
 

@@ -31,7 +31,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -54,14 +56,19 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zhuri.daybyday.data.TaskRepository
 import com.zhuri.daybyday.model.DiaryEntry
+import com.zhuri.daybyday.model.Achievement
 import com.zhuri.daybyday.model.Task
+import com.zhuri.daybyday.model.currentStreak
 import com.zhuri.daybyday.model.buildDiaryStats
 import com.zhuri.daybyday.ui.components.IconCalendar
 import com.zhuri.daybyday.ui.components.IconDiary
 import com.zhuri.daybyday.ui.components.IconPlus
 import com.zhuri.daybyday.ui.components.IconStats
+import com.zhuri.daybyday.ui.components.AllDoneCelebration
 import com.zhuri.daybyday.ui.components.IconToday
+import com.zhuri.daybyday.ui.components.TrophyCelebration
 import com.zhuri.daybyday.ui.theme.Zhuri
+import com.zhuri.daybyday.util.doneKey
 import java.time.LocalDate
 
 private val TAB_LABELS = listOf("今日", "日历", "笔记", "总结")
@@ -77,6 +84,7 @@ fun Root(repo: TaskRepository) {
     val done by repo.done.collectAsStateWithLifecycle()
     val entries by repo.entries.collectAsStateWithLifecycle()
     val categories by repo.categories.collectAsStateWithLifecycle()
+    val unlockedAchievements by repo.achievements.collectAsStateWithLifecycle()
 
     var today by remember { mutableStateOf(LocalDate.now()) }
     var tab by remember { mutableStateOf(0) }
@@ -91,6 +99,35 @@ fun Root(repo: TaskRepository) {
     var diaryDate by remember { mutableStateOf(LocalDate.now()) }
 
     val diaryStats = remember(entries, today) { buildDiaryStats(entries, today) }
+    val streak = remember(tasks, done, today) { currentStreak(tasks, done, today) }
+    val tasksOnSelected = remember(tasks, selected) { tasks.filter { it.occursOn(selected) } }
+
+    var allDonePulse by remember { mutableStateOf(0) }
+    var unlockedTrophy by remember { mutableStateOf<Achievement?>(null) }
+    var achievementsBootstrapped by remember { mutableStateOf(false) }
+
+    // 升级后首次启动：按已有连续天数静默补齐奖杯；后续跨过门槛才庆祝
+    LaunchedEffect(tasks, done, today) {
+        val newly = repo.unlockAchievements(streak)
+        if (achievementsBootstrapped && newly.isNotEmpty()) {
+            allDonePulse = 0
+            unlockedTrophy = newly.last()
+        }
+        achievementsBootstrapped = true
+    }
+
+    fun toggleTask(task: Task) {
+        val wasAllDone = tasksOnSelected.isNotEmpty() &&
+            tasksOnSelected.all { doneKey(it.id, selected) in done }
+        val becomesAllDone = tasksOnSelected.isNotEmpty() &&
+            doneKey(task.id, selected) !in done &&
+            tasksOnSelected.all { it.id == task.id || doneKey(it.id, selected) in done }
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        repo.toggle(task.id, selected)
+        if (selected == today && !wasAllDone && becomesAllDone) {
+            allDonePulse++
+        }
+    }
     // 空白的今天已有「添加第一件事」按钮，不再叠一个 FAB
 
     // 跨天回到前台时刷新「今天」
@@ -154,30 +191,23 @@ fun Root(repo: TaskRepository) {
                     done = done,
                     date = selected,
                     today = today,
-                    diaryEntries = entries,
                     onSelectDate = { selected = it },
-                    onToggle = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        repo.toggle(it.id, selected)
-                    },
+                    onToggle = { toggleTask(it) },
                     onOpenTask = { openTask(it) },
-                    onAdd = { openNew() },
-                    onOpenDiary = { openDiary(it) },
-                    onNewDiary = { openNewDiary(it) },
-                    onViewAllDiary = { tab = 2 }
+                    onAdd = { openNew() }
                 )
 
                 1 -> CalendarScreen(
                     tasks = tasks,
                     done = done,
+                    entries = entries,
+                    categories = categories,
                     selected = selected,
                     today = today,
                     onSelect = { selected = it },
-                    onToggle = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        repo.toggle(it.id, selected)
-                    },
-                    onOpenTask = { openTask(it) }
+                    onToggle = { toggleTask(it) },
+                    onOpenTask = { openTask(it) },
+                    onOpenDiary = { openDiary(it) }
                 )
 
                 2 -> AdaptiveContent(maxWidth = 560.dp) {
@@ -197,6 +227,8 @@ fun Root(repo: TaskRepository) {
                     today = today,
                     diaryStats = diaryStats,
                     categories = categories,
+                    unlockedAchievements = unlockedAchievements,
+                    streak = streak,
                     onOpenDiary = { tab = 2 }
                 )
             }
@@ -272,6 +304,18 @@ fun Root(repo: TaskRepository) {
                 diaryEditorOpen = false
             }
         )
+    }
+
+    // 庆祝层：奖杯优先于「全部完成」，都用轻量遮罩，不跳页面
+    unlockedTrophy?.let { achievement ->
+        key(achievement.id) {
+            TrophyCelebration(achievement) { unlockedTrophy = null }
+        }
+    }
+    if (allDonePulse > 0 && unlockedTrophy == null) {
+        key(allDonePulse) {
+            AllDoneCelebration { allDonePulse = 0 }
+        }
     }
 }
 

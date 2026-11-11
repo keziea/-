@@ -68,7 +68,8 @@
 │   ├── 逐日-v1.3.apk
 │   └── screenshots/             ← 今日 / 日历 / 笔记 / 总结 / 编辑器 / 暗色 / 平板
 ├── scripts/
-│   └── seed_demo.py             ← 生成演示数据（任务 + 笔记），用于截图与统计校验
+│   ├── seed_demo.py             ← 生成演示数据（任务 + 笔记），用于截图与统计校验
+│   └── new_release.py           ← 新建版本说明并刷新 docs/releases 索引
 ├── signing/zhuri-release.jks    ← Release 签名密钥（密码见 docs/01 第 6 节）
 └── .workbuddy/memory/           ← 会话记忆（AI 用，非代码）
 ```
@@ -84,6 +85,8 @@
 | ⑤ | `docs/04-数据与状态.md` | 要改数据结构 / 存储 / 迁移时读。JSON Schema 与读写时机 |
 | ⑥ | `docs/05-验收与测试.md` | 交付前读。验收清单、性能指标、已知限制 |
 | ⑦ | `docs/CHANGELOG.md` | 每次改动后追加。改了什么、为什么改 |
+| ⑧ | `docs/releases/README.md` | 发版前必看。逐版本用户说明索引与写法 |
+| ⑨ | `docs/06-发布流程.md` | 要发版时读。版本号规则、发布说明模板、双推步骤 |
 
 **推荐路径**：
 - 只想跑起来 → ① → ②
@@ -145,6 +148,9 @@ export MSYS_NO_PATHCONV=1   # Git Bash 下必须，否则 /data/... 会被转成
 5. **不阻塞主线程**：JSON 读写放在 `Dispatchers.IO`；列表全部用 `LazyColumn` + 稳定 `key`。
 6. **暗色模式必须同步可用**：每个新颜色都要给出 light / dark 两套值。
 7. **中文文案**：全部面向用户的字符串写中文，不出现「未命名项目」这类占位词。
+8. **发版必须留说明**：每发一个版本，先运行 `python scripts/new_release.py <版本> "<标题>" --type <类型> --summary "<摘要>"`，
+   补全「新增 / 改进 / 修复」，再改 `versionCode` / `versionName` 打包含。没有发布说明不许打包。
+   一个版本一个文件，不按 bug 建文件夹；普通 bug 并入下一版，紧急修复发补丁版本（如 v3.0.1）。
 
 ## 7. 当前状态（v1.3）
 

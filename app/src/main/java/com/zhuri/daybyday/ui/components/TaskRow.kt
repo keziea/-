@@ -41,17 +41,17 @@ fun TaskRow(
 
     val background by animateColorAsState(
         targetValue = if (done) colors.surfaceAlt else colors.surface,
-        animationSpec = tween(220),
+        animationSpec = tween(140),
         label = "rowBg"
     )
     val borderColor by animateColorAsState(
         targetValue = if (done) Color.Transparent else colors.line,
-        animationSpec = tween(220),
+        animationSpec = tween(140),
         label = "rowBorder"
     )
     val titleColor by animateColorAsState(
         targetValue = if (done) colors.ink3 else colors.ink,
-        animationSpec = tween(220),
+        animationSpec = tween(140),
         label = "titleColor"
     )
 

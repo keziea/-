@@ -61,7 +61,7 @@ fun ProgressRing(
     val target = progress.coerceIn(0f, 1f)
     val animated by animateFloatAsState(
         targetValue = target,
-        animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
         label = "ring"
     )
     Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
@@ -111,22 +111,22 @@ fun CheckCircle(
     val colors = Zhuri.colors
     val background by animateColorAsState(
         targetValue = if (checked) colors.accent else Color.Transparent,
-        animationSpec = tween(180),
+        animationSpec = tween(140),
         label = "checkBg"
     )
     val borderColor by animateColorAsState(
         targetValue = if (checked) colors.accent else colors.ink3,
-        animationSpec = tween(180),
+        animationSpec = tween(140),
         label = "checkBorder"
     )
     val checkAlpha by animateFloatAsState(
         targetValue = if (checked) 1f else 0f,
-        animationSpec = tween(150),
+        animationSpec = tween(110),
         label = "checkAlpha"
     )
     val checkScale by animateFloatAsState(
         targetValue = if (checked) 1f else 0.4f,
-        animationSpec = spring(dampingRatio = 0.5f, stiffness = 620f),
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 900f),
         label = "checkScale"
     )
 

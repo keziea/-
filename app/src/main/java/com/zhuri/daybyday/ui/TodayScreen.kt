@@ -188,7 +188,7 @@ fun TodayScreen(
                         onToggle = { onToggle(task) },
                         modifier = Modifier
                             .padding(horizontal = 22.dp, vertical = 4.dp)
-                            .animateItem()
+                            .animateItem(placementSpec = tween(180))
                     )
                 }
             }
@@ -212,7 +212,7 @@ fun TodayScreen(
                         onToggle = { onToggle(task) },
                         modifier = Modifier
                             .padding(horizontal = 22.dp, vertical = 4.dp)
-                            .animateItem()
+                            .animateItem(placementSpec = tween(180))
                     )
                 }
             }

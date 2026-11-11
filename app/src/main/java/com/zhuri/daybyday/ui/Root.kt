@@ -1,14 +1,10 @@
 package com.zhuri.daybyday.ui
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -103,14 +99,18 @@ fun Root(repo: TaskRepository) {
     val diaryStats = remember(entries, today) { buildDiaryStats(entries, today) }
     var streak by remember { mutableStateOf(0) }
     val tasksOnSelected = remember(tasks, selected) { tasks.filter { it.occursOn(selected) } }
+    val todayTasks = remember(tasks, today) { tasks.filter { it.occursOn(today) } }
+    val todayAllDone = todayTasks.isNotEmpty() && todayTasks.all { doneKey(it.id, today) in done }
+    val selectedAllDone = tasksOnSelected.isNotEmpty() &&
+        tasksOnSelected.all { doneKey(it.id, selected) in done }
 
     var allDonePulse by remember { mutableStateOf(0) }
     var unlockedTrophy by remember { mutableStateOf<Achievement?>(null) }
     var achievementsBootstrapped by remember { mutableStateOf(false) }
 
     // 升级后首次启动：按已有连续天数静默补齐奖杯；后续跨过门槛才庆祝
-    LaunchedEffect(tasks, done, today) {
-        // 连续天数可能要用一年多的数据，放后台算，避免勾选任务时掉帧
+    // 只有某一天的「全完成」状态变化才可能改变连续天数；普通勾选不触发重算
+    LaunchedEffect(tasks, today, selected, todayAllDone, selectedAllDone) {
         val current = withContext(Dispatchers.Default) { currentStreak(tasks, done, today) }
         streak = current
         val newly = repo.unlockAchievements(current)
@@ -182,15 +182,8 @@ fun Root(repo: TaskRepository) {
             .statusBarsPadding()
     ) {
         AdaptiveContent {
-            AnimatedContent(
-                targetState = tab,
-                transitionSpec = {
-                    fadeIn(tween(190)).togetherWith(fadeOut(tween(130)))
-                },
-                label = "tab",
-                modifier = Modifier.fillMaxSize()
-            ) { current ->
-            when (current) {
+            // 切页直接换，不做整页淡入淡出：少合成一张页面，点击响应更直接
+            when (tab) {
                 0 -> TodayScreen(
                     tasks = tasks,
                     done = done,
@@ -236,7 +229,6 @@ fun Root(repo: TaskRepository) {
                     streak = streak,
                     onOpenDiary = { tab = 2 }
                 )
-            }
             }
         }
 
@@ -373,7 +365,7 @@ private fun NavPill(
     Row(
         modifier = modifier
             .shadow(
-                elevation = 20.dp,
+                elevation = 12.dp,
                 shape = CircleShape,
                 clip = false,
                 ambientColor = Color(0x14000000),
@@ -408,17 +400,17 @@ private fun RowScope.NavItem(
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.94f else 1f,
-        animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow),
+        animationSpec = spring(dampingRatio = 0.75f, stiffness = 900f),
         label = "navScale"
     )
     val background by animateColorAsState(
         targetValue = if (selected) colors.ink else Color.Transparent,
-        animationSpec = tween(200),
+        animationSpec = tween(120),
         label = "navBg"
     )
     val tint by animateColorAsState(
         targetValue = if (selected) colors.onInk else colors.ink3,
-        animationSpec = tween(180),
+        animationSpec = tween(100),
         label = "navTint"
     )
 

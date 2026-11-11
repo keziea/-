@@ -22,7 +22,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.zhuri.daybyday.model.Task
+import com.zhuri.daybyday.model.TaskOutcome
 import com.zhuri.daybyday.ui.theme.Zhuri
 
 /**
@@ -32,6 +34,7 @@ import com.zhuri.daybyday.ui.theme.Zhuri
 fun TaskRow(
     task: Task,
     done: Boolean,
+    outcome: TaskOutcome? = null,
     onClick: () -> Unit,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier
@@ -100,6 +103,21 @@ fun TaskRow(
                 Text(
                     text = meta,
                     style = Zhuri.type.caption,
+                    color = colors.ink3
+                )
+            }
+            if (outcome == TaskOutcome.FAILED) {
+                Spacer(Modifier.height(5.dp))
+                Text(
+                    text = "未完成 · 点左侧圆圈补记为成功",
+                    fontSize = 10.sp,
+                    color = colors.accent
+                )
+            } else if (outcome == TaskOutcome.SUCCESS) {
+                Spacer(Modifier.height(5.dp))
+                Text(
+                    text = "成功",
+                    fontSize = 10.sp,
                     color = colors.ink3
                 )
             }

@@ -6,6 +6,18 @@ import java.time.LocalDate
 
 enum class Repeat { NONE, DAILY, WEEKLY, MONTHLY }
 
+/** 某条任务在某一天的结果：已完成 / 已过期未完成 / 还未到 */
+enum class TaskOutcome { SUCCESS, FAILED, PENDING }
+
+fun outcomeOf(task: Task, date: LocalDate, today: LocalDate, done: Set<String>): TaskOutcome {
+    val key = com.zhuri.daybyday.util.doneKey(task.id, date)
+    return when {
+        key in done -> TaskOutcome.SUCCESS
+        date.isBefore(today) -> TaskOutcome.FAILED
+        else -> TaskOutcome.PENDING
+    }
+}
+
 /**
  * 一条待办定义。重复任务不是「生成 N 条实例」，而是同一份定义 + 完成记录，见 docs/04。
  */

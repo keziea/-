@@ -105,12 +105,13 @@ fun Root(repo: TaskRepository) {
         tasksOnSelected.all { doneKey(it.id, selected) in done }
 
     var allDonePulse by remember { mutableStateOf(0) }
+    var retroSignal by remember { mutableStateOf(0) }
     var unlockedTrophy by remember { mutableStateOf<Achievement?>(null) }
     var achievementsBootstrapped by remember { mutableStateOf(false) }
 
     // 升级后首次启动：按已有连续天数静默补齐奖杯；后续跨过门槛才庆祝
     // 只有某一天的「全完成」状态变化才可能改变连续天数；普通勾选不触发重算
-    LaunchedEffect(tasks, today, selected, todayAllDone, selectedAllDone) {
+    LaunchedEffect(tasks, today, selected, todayAllDone, selectedAllDone, retroSignal) {
         val current = withContext(Dispatchers.Default) { currentStreak(tasks, done, today) }
         streak = current
         val newly = repo.unlockAchievements(current)
@@ -121,18 +122,22 @@ fun Root(repo: TaskRepository) {
         achievementsBootstrapped = true
     }
 
-    fun toggleTask(task: Task) {
-        val wasAllDone = tasksOnSelected.isNotEmpty() &&
-            tasksOnSelected.all { doneKey(it.id, selected) in done }
-        val becomesAllDone = tasksOnSelected.isNotEmpty() &&
-            doneKey(task.id, selected) !in done &&
-            tasksOnSelected.all { it.id == task.id || doneKey(it.id, selected) in done }
+    fun toggleForDate(task: Task, date: LocalDate) {
+        val dayTasks = tasks.filter { it.occursOn(date) }
+        val wasAllDone = dayTasks.isNotEmpty() &&
+            dayTasks.all { doneKey(it.id, date) in done }
+        val becomesAllDone = dayTasks.isNotEmpty() &&
+            doneKey(task.id, date) !in done &&
+            dayTasks.all { it.id == task.id || doneKey(it.id, date) in done }
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-        repo.toggle(task.id, selected)
-        if (selected == today && !wasAllDone && becomesAllDone) {
+        repo.toggle(task.id, date)
+        if (date != today) retroSignal++
+        if (date == today && !wasAllDone && becomesAllDone) {
             allDonePulse++
         }
     }
+
+    fun toggleTask(task: Task) = toggleForDate(task, selected)
     // 空白的今天已有「添加第一件事」按钮，不再叠一个 FAB
 
     // 跨天回到前台时刷新「今天」
@@ -227,6 +232,7 @@ fun Root(repo: TaskRepository) {
                     categories = categories,
                     unlockedAchievements = unlockedAchievements,
                     streak = streak,
+                    onMarkDone = { task, date -> toggleForDate(task, date) },
                     onOpenDiary = { tab = 2 }
                 )
             }

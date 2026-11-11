@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zhuri.daybyday.model.DiaryEntry
@@ -56,6 +57,8 @@ import com.zhuri.daybyday.util.toIso
 import com.zhuri.daybyday.util.weekChar
 import java.time.LocalDate
 import kotlin.math.roundToInt
+
+private data class MissedOccurrence(val task: Task, val date: LocalDate)
 
 private data class DayStat(val date: LocalDate, val total: Int, val done: Int) {
     val rate: Float get() = if (total == 0) 0f else done.toFloat() / total
@@ -179,11 +182,27 @@ fun StatsScreen(
     categories: List<String>,
     unlockedAchievements: Set<String>,
     streak: Int,
+    onMarkDone: (Task, LocalDate) -> Unit,
     onOpenDiary: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = Zhuri.colors
     val stats = remember(tasks, done, today) { buildStats(tasks, done, today) }
+    val recentMissed = remember(tasks, done, today) {
+        val list = ArrayList<MissedOccurrence>()
+        for (offset in 1..7) {
+            val day = today.minusDays(offset.toLong())
+            tasks.forEach { task ->
+                if (task.occursOn(day) && doneKey(task.id, day) !in done) {
+                    list.add(MissedOccurrence(task, day))
+                }
+            }
+        }
+        list.sortedWith(
+            compareByDescending<MissedOccurrence> { it.date }
+                .thenBy { it.task.title }
+        )
+    }
     val context = LocalContext.current
     val versionName = remember(context) {
         runCatching {
@@ -228,6 +247,7 @@ fun StatsScreen(
         item { ThreeTiles(stats) }
         item { WeekBarCard(stats) }
         item { HeatCard(stats.heat) }
+        item { MissedCard(recentMissed, onMarkDone) }
         item { TrophyCard(unlockedAchievements, streak) }
         item { DiaryStatsCard(diaryStats, categories, today, onOpenDiary) }
         item {
@@ -534,6 +554,83 @@ private fun HeatCard(heat: List<List<DayStat>>) {
 
 private val HeatCell = 11.dp
 private val HeatGap = 4.dp
+
+@Composable
+private fun MissedCard(
+    items: List<MissedOccurrence>,
+    onMarkDone: (Task, LocalDate) -> Unit
+) {
+    val colors = Zhuri.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp)
+            .padding(top = 14.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(colors.surface)
+            .border(1.dp, colors.line, RoundedCornerShape(22.dp))
+            .padding(18.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("近 7 天未完成", style = Zhuri.type.label, color = colors.ink3)
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = if (items.isEmpty()) "0 件" else "${items.size} 件",
+                fontSize = 11.sp,
+                color = if (items.isEmpty()) colors.ink3 else colors.accent
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = if (items.isEmpty()) {
+                "没有落下的事，保持住"
+            } else {
+                "漏掉的可以补记；补完就重新算作成功"
+            },
+            fontSize = 11.sp,
+            color = colors.ink3
+        )
+        if (items.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            items.take(6).forEach { item ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = item.task.title,
+                            fontSize = 13.sp,
+                            color = colors.ink,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = "${item.date.monthValue}月${item.date.dayOfMonth}日 · 未完成",
+                            fontSize = 9.sp,
+                            color = colors.ink3
+                        )
+                    }
+                    TextAction(
+                        text = "补记",
+                        onClick = { onMarkDone(item.task, item.date) }
+                    )
+                }
+            }
+            if (items.size > 6) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "还有 ${items.size - 6} 件，可在日历里逐天补记",
+                    fontSize = 9.sp,
+                    color = colors.ink3
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun AboutCard(

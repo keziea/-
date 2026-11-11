@@ -265,6 +265,7 @@ fun CalendarScreen(
                         tasks = dayTasks,
                         done = done,
                         date = selected,
+                        today = today,
                         expanded = tasksExpanded,
                         onToggleExpand = { tasksExpanded = !tasksExpanded },
                         onToggle = onToggle,
@@ -290,6 +291,7 @@ private fun DayScheduleCard(
     tasks: List<Task>,
     done: Set<String>,
     date: LocalDate,
+    today: LocalDate,
     expanded: Boolean,
     onToggleExpand: () -> Unit,
     onToggle: (Task) -> Unit,
@@ -297,6 +299,7 @@ private fun DayScheduleCard(
 ) {
     val colors = Zhuri.colors
     val completed = tasks.count { doneKey(it.id, date) in done }
+    val failed = if (date.isBefore(today)) tasks.size - completed else 0
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -322,9 +325,17 @@ private fun DayScheduleCard(
             Text("日程", style = Zhuri.type.label, color = colors.ink2)
             Spacer(Modifier.weight(1f))
             Text(
-                text = "完成 $completed / ${tasks.size}",
+                text = if (date.isBefore(today)) {
+                    "成功 $completed · 未完成 $failed"
+                } else {
+                    "完成 $completed / ${tasks.size}"
+                },
                 fontSize = 11.sp,
-                color = if (completed == tasks.size) colors.accent else colors.ink3
+                color = when {
+                    date.isBefore(today) && failed > 0 -> colors.accent
+                    completed == tasks.size -> colors.accent
+                    else -> colors.ink3
+                }
             )
             Spacer(Modifier.width(8.dp))
             IconChevron(
@@ -339,6 +350,7 @@ private fun DayScheduleCard(
                     TaskRow(
                         task = task,
                         done = doneKey(task.id, date) in done,
+                        outcome = com.zhuri.daybyday.model.outcomeOf(task, date, today, done),
                         onClick = { onOpenTask(task) },
                         onToggle = { onToggle(task) },
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)

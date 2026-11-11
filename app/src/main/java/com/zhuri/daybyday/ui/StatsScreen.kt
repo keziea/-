@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -183,6 +184,18 @@ fun StatsScreen(
 ) {
     val colors = Zhuri.colors
     val stats = remember(tasks, done, today) { buildStats(tasks, done, today) }
+    val context = LocalContext.current
+    val versionName = remember(context) {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull() ?: "—"
+    }
+    val versionCode = remember(context) {
+        runCatching {
+            @Suppress("DEPRECATION")
+            context.packageManager.getPackageInfo(context.packageName, 0).versionCode.toString()
+        }.getOrNull() ?: "—"
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -202,6 +215,12 @@ fun StatsScreen(
                     fontSize = 13.sp,
                     color = colors.ink3
                 )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "v$versionName ($versionCode) · 纯本地运行",
+                    fontSize = 10.sp,
+                    color = colors.ink3.copy(alpha = 0.85f)
+                )
             }
         }
 
@@ -211,6 +230,15 @@ fun StatsScreen(
         item { HeatCard(stats.heat) }
         item { TrophyCard(unlockedAchievements, streak) }
         item { DiaryStatsCard(diaryStats, categories, today, onOpenDiary) }
+        item {
+            AboutCard(
+                versionName = versionName,
+                versionCode = versionCode,
+                taskCount = tasks.size,
+                noteCount = diaryStats.total,
+                trophyCount = unlockedAchievements.size
+            )
+        }
     }
 }
 
@@ -506,6 +534,67 @@ private fun HeatCard(heat: List<List<DayStat>>) {
 
 private val HeatCell = 11.dp
 private val HeatGap = 4.dp
+
+@Composable
+private fun AboutCard(
+    versionName: String,
+    versionCode: String,
+    taskCount: Int,
+    noteCount: Int,
+    trophyCount: Int
+) {
+    val colors = Zhuri.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp)
+            .padding(top = 14.dp, bottom = 8.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(colors.surface)
+            .border(1.dp, colors.line, RoundedCornerShape(22.dp))
+            .padding(18.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("关于逐日", style = Zhuri.type.label, color = colors.ink3)
+            Spacer(Modifier.weight(1f))
+            Text("v$versionName ($versionCode)", fontSize = 11.sp, color = colors.ink2)
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "纯本地 · 无广告 · 无账号 · 无网络权限",
+            fontSize = 11.sp,
+            color = colors.ink3
+        )
+        Spacer(Modifier.height(12.dp))
+        Row(modifier = Modifier.fillMaxWidth()) {
+            AboutStat("日程", "$taskCount", Modifier.weight(1f))
+            AboutStat("笔记", "$noteCount", Modifier.weight(1f))
+            AboutStat("奖杯", "$trophyCount / 10", Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "所有数据只保存在这台设备上。覆盖安装会保留，卸载会清空。",
+            fontSize = 10.sp,
+            color = colors.ink3
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "逐日 · Day by Day",
+            fontSize = 9.sp,
+            color = colors.ink3.copy(alpha = 0.6f)
+        )
+    }
+}
+
+@Composable
+private fun AboutStat(label: String, value: String, modifier: Modifier = Modifier) {
+    val colors = Zhuri.colors
+    Column(modifier = modifier) {
+        Text(value, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = colors.ink)
+        Spacer(Modifier.height(2.dp))
+        Text(label, fontSize = 9.sp, color = colors.ink3)
+    }
+}
 
 @Composable
 private fun TrophyCard(unlocked: Set<String>, streak: Int) {

@@ -2,10 +2,8 @@ package com.zhuri.daybyday.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -262,28 +260,35 @@ private fun DateHeader(
                         fontSize = 13.sp,
                         color = colors.ink3
                     )
-                    AnimatedVisibility(
-                        visible = showJump,
-                        enter = fadeIn(tween(140)) + expandHorizontally(tween(140)),
-                        exit = fadeOut(tween(100)) + shrinkHorizontally(tween(100))
+                    // 固定高度槽位：胶囊出现时不再改变头部高度，避免滑动一开始抖一下
+                    Box(
+                        modifier = Modifier
+                            .height(22.dp)
+                            .padding(top = 3.dp),
+                        contentAlignment = Alignment.CenterStart
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .padding(top = 5.dp)
-                                .clip(RoundedCornerShape(50))
-                                .background(colors.accentSoft)
-                                .clickable(onClick = onBackToToday)
-                                .padding(horizontal = 10.dp, vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = showJump,
+                            enter = fadeIn(tween(120)),
+                            exit = fadeOut(tween(90))
                         ) {
-                            Text("回到今天", fontSize = 10.sp, color = colors.accentInk)
-                            Spacer(Modifier.width(3.dp))
-                            IconChevron(
-                                colors.accentInk,
-                                direction = 1,
-                                modifier = Modifier.size(9.dp),
-                                stroke = 1.4.dp
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50))
+                                    .background(colors.accentSoft)
+                                    .clickable(onClick = onBackToToday)
+                                    .padding(horizontal = 10.dp, vertical = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("回到今天", fontSize = 10.sp, color = colors.accentInk)
+                                Spacer(Modifier.width(3.dp))
+                                IconChevron(
+                                    colors.accentInk,
+                                    direction = 1,
+                                    modifier = Modifier.size(9.dp),
+                                    stroke = 1.4.dp
+                                )
+                            }
                         }
                     }
                 }

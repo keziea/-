@@ -1,10 +1,10 @@
 package com.zhuri.daybyday.ui.components
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +62,7 @@ fun DateStrip(
     val total = PAST_DAYS + FUTURE_DAYS + 1
     val homeIndex = (PAST_DAYS - 4).coerceAtLeast(0)
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = homeIndex)
+    val fling = rememberSnapFlingBehavior(lazyListState = listState)
 
     // 选中日期变化时（包括点「回到今天」），把这一天带回视野
     val selectedIndex = remember(selected, today) {
@@ -99,32 +100,28 @@ fun DateStrip(
     LazyRow(
         modifier = modifier.padding(horizontal = 22.dp),
         state = listState,
+        flingBehavior = fling,
         contentPadding = PaddingValues(horizontal = 0.dp),
         horizontalArrangement = Arrangement.spacedBy(5.dp)
     ) {
-        items(total) { index ->
+        items(
+            count = total,
+            key = { index -> today.minusDays(PAST_DAYS.toLong()).plusDays(index.toLong()).toEpochDay() },
+            contentType = { "day" }
+        ) { index ->
             val date = today.minusDays(PAST_DAYS.toLong()).plusDays(index.toLong())
             val isSelected = date == selected
             val isToday = date == today
             val mark = markFor(date)
 
             val shape = RoundedCornerShape(18.dp)
-            val background by animateColorAsState(
-                targetValue = if (isSelected) colors.ink else Color.Transparent,
-                animationSpec = tween(180),
-                label = "dateBg"
-            )
-            val borderColor by animateColorAsState(
-                targetValue = if (!isSelected && isToday) {
-                    colors.accent.copy(alpha = 0.42f)
-                } else if (isSelected) {
-                    colors.ink
-                } else {
-                    Color.Transparent
-                },
-                animationSpec = tween(180),
-                label = "dateBorder"
-            )
+            // 直接取色，不再为每个日期各建两条颜色动画；横向滑动时更轻
+            val background = if (isSelected) colors.ink else Color.Transparent
+            val borderColor = when {
+                !isSelected && isToday -> colors.accent.copy(alpha = 0.42f)
+                isSelected -> colors.ink
+                else -> Color.Transparent
+            }
 
             Column(
                 modifier = Modifier

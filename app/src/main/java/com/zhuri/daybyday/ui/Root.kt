@@ -70,6 +70,8 @@ import com.zhuri.daybyday.ui.components.TrophyCelebration
 import com.zhuri.daybyday.ui.theme.Zhuri
 import com.zhuri.daybyday.util.doneKey
 import java.time.LocalDate
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private val TAB_LABELS = listOf("今日", "日历", "笔记", "总结")
 
@@ -99,7 +101,7 @@ fun Root(repo: TaskRepository) {
     var diaryDate by remember { mutableStateOf(LocalDate.now()) }
 
     val diaryStats = remember(entries, today) { buildDiaryStats(entries, today) }
-    val streak = remember(tasks, done, today) { currentStreak(tasks, done, today) }
+    var streak by remember { mutableStateOf(0) }
     val tasksOnSelected = remember(tasks, selected) { tasks.filter { it.occursOn(selected) } }
 
     var allDonePulse by remember { mutableStateOf(0) }
@@ -108,7 +110,10 @@ fun Root(repo: TaskRepository) {
 
     // 升级后首次启动：按已有连续天数静默补齐奖杯；后续跨过门槛才庆祝
     LaunchedEffect(tasks, done, today) {
-        val newly = repo.unlockAchievements(streak)
+        // 连续天数可能要用一年多的数据，放后台算，避免勾选任务时掉帧
+        val current = withContext(Dispatchers.Default) { currentStreak(tasks, done, today) }
+        streak = current
+        val newly = repo.unlockAchievements(current)
         if (achievementsBootstrapped && newly.isNotEmpty()) {
             allDonePulse = 0
             unlockedTrophy = newly.last()

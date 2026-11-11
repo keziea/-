@@ -38,18 +38,18 @@
 每个版本一份独立说明，写清新增、改进与具体修复：
 
 - [全部版本索引](docs/releases/README.md)
-- [最新 v3.0 · 完成庆祝 + 奖杯系统 + 日历摘要](docs/releases/v3.0.md)
+- [最新 v3.0.1 · 修复奖杯墙滚动卡顿](docs/releases/v3.0.1.md)
 
 ## 安装
 
 <p align="center">
-  <a href="artifacts/逐日-v3.0.apk">
-    <img src="docs/assets/download-v3.0.svg" alt="下载逐日 v3.0 安装包" height="76">
+  <a href="artifacts/逐日-v3.0.1.apk">
+    <img src="docs/assets/download-v3.0.1.svg" alt="下载逐日 v3.0.1 安装包" height="76">
   </a>
 </p>
 
 <p align="center">
-  <strong>点上面的按钮，或 <a href="artifacts/逐日-v3.0.apk">直接下载 v3.0 安装包</a></strong>
+  <strong>点上面的按钮，或 <a href="artifacts/逐日-v3.0.1.apk">直接下载 v3.0.1 安装包</a></strong>
 </p>
 
 下载后直接覆盖安装，数据会保留（**不要卸载旧版**）。

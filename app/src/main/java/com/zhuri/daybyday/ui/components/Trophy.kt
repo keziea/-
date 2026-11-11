@@ -10,6 +10,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,13 +78,19 @@ fun TrophyBadge(
     animated: Boolean = false
 ) {
     val palette = paletteOf(tier)
-    val transition = rememberInfiniteTransition(label = "trophy")
-    val pulse by transition.animateFloat(
-        initialValue = 0.985f,
-        targetValue = 1.015f,
-        animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse),
-        label = "trophyPulse"
-    )
+    // 只有真正需要动效的那一座才创建无限动画；奖杯墙里 10 座静止杯不产生任何每帧重绘
+    val pulse: Float = if (animated && unlocked) {
+        val transition = rememberInfiniteTransition(label = "trophy")
+        val value by transition.animateFloat(
+            initialValue = 0.985f,
+            targetValue = 1.015f,
+            animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse),
+            label = "trophyPulse"
+        )
+        value
+    } else {
+        1f
+    }
 
     Canvas(
         modifier = modifier
@@ -288,15 +295,13 @@ fun AllDoneCelebration(onDismiss: () -> Unit) {
         scale.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 260f))
     }
     LaunchedEffect(Unit) {
-        delay(4000)
+        delay(3000)
         onDismiss()
     }
 
+    // 不铺全屏遮罩、不拦截触摸：庆祝只是浮一层，手可以直接继续操作
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.18f))
-            .clickable(onClick = onDismiss),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Confetti(progress = progress.value)
@@ -309,6 +314,8 @@ fun AllDoneCelebration(onDismiss: () -> Unit) {
                 .padding(horizontal = 34.dp)
                 .clip(RoundedCornerShape(28.dp))
                 .background(colors.surface)
+                .border(1.dp, colors.line, RoundedCornerShape(28.dp))
+                .clickable(onClick = onDismiss)
                 .padding(horizontal = 28.dp, vertical = 26.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

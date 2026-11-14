@@ -55,6 +55,8 @@
   <a href="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/daybyday-v3.2.0.apk">Gitee 下载</a>
   ·
   <a href="https://github.com/keziea/-/raw/main/artifacts/daybyday-v3.2.0.apk">GitHub 下载</a>
+  ·
+  <a href="https://cdn.jsdelivr.net/gh/keziea/-@main/artifacts/daybyday-v3.2.0.apk">备用 CDN 下载</a>
 </p>
 
 下载后直接覆盖安装，数据会保留（**不要卸载旧版**）。

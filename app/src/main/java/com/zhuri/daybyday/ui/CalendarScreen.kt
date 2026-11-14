@@ -49,6 +49,7 @@ import com.zhuri.daybyday.ui.components.DayMark
 import com.zhuri.daybyday.ui.components.IconChevron
 import com.zhuri.daybyday.ui.components.MonthGrid
 import com.zhuri.daybyday.ui.components.TaskRow
+import com.zhuri.daybyday.ui.components.TextAction
 import com.zhuri.daybyday.ui.components.WeekHeader
 import com.zhuri.daybyday.ui.theme.Zhuri
 import com.zhuri.daybyday.ui.theme.noteTint
@@ -70,6 +71,7 @@ fun CalendarScreen(
     onToggle: (Task) -> Unit,
     onOpenTask: (Task) -> Unit,
     onOpenDiary: (DiaryEntry) -> Unit,
+    onAdd: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = Zhuri.colors
@@ -246,6 +248,8 @@ fun CalendarScreen(
                     fontSize = 11.sp,
                     color = colors.ink3
                 )
+                Spacer(Modifier.width(8.dp))
+                TextAction(text = "添加", onClick = onAdd, color = colors.accent)
             }
 
             if (dayTasks.isEmpty() && dayNotes.isEmpty()) {
@@ -258,7 +262,7 @@ fun CalendarScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("这天还没有安排", fontSize = 14.sp, color = colors.ink2)
                         Spacer(Modifier.height(4.dp))
-                        Text("点右下角添加一件事", fontSize = 12.sp, color = colors.ink3)
+                        Text("点上方「添加」安排一件事", fontSize = 12.sp, color = colors.ink3)
                     }
                 }
             } else {

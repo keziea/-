@@ -210,7 +210,8 @@ fun Root(repo: TaskRepository) {
                     onSelect = { selected = it },
                     onToggle = { toggleTask(it) },
                     onOpenTask = { openTask(it) },
-                    onOpenDiary = { openDiary(it) }
+                    onOpenDiary = { openDiary(it) },
+                    onAdd = { openNew() }
                 )
 
                 2 -> AdaptiveContent(maxWidth = 560.dp) {
@@ -237,19 +238,6 @@ fun Root(repo: TaskRepository) {
                     onImportJson = { text -> repo.importJson(text) },
                     onOpenDiary = { tab = 2 }
                 )
-            }
-        }
-
-        // 笔记页顶部已有「写下今天」入口；空白的今天用空状态按钮，都不叠 FAB
-        // 今日页的添加按钮已下沉到「日程」和「笔记」各自的标题里，不再用全局加号
-        if (tab == 1) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
-                    .padding(end = contentInset + 22.dp, bottom = 92.dp)
-            ) {
-                AddFab(onClick = { openNew() })
             }
         }
 

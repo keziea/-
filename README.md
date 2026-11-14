@@ -5,18 +5,18 @@
 
 <!-- 截图 -->
 <p align="center">
-  <img src="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/screenshots/00-icon.png" width="620" alt="图标"/>
+  <img src="https://cdn.jsdelivr.net/gh/keziea/-@main/artifacts/screenshots/00-icon.png" width="620" alt="图标"/>
 </p>
 
 <p align="center">
-  <img src="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/screenshots/01-today.png" width="240" alt="今日"/>
-  <img src="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/screenshots/06-notes.png" width="240" alt="笔记"/>
-  <img src="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/screenshots/03-stats.png" width="240" alt="总结"/>
+  <img src="https://cdn.jsdelivr.net/gh/keziea/-@main/artifacts/screenshots/01-today.png" width="240" alt="今日"/>
+  <img src="https://cdn.jsdelivr.net/gh/keziea/-@main/artifacts/screenshots/06-notes.png" width="240" alt="笔记"/>
+  <img src="https://cdn.jsdelivr.net/gh/keziea/-@main/artifacts/screenshots/03-stats.png" width="240" alt="总结"/>
 </p>
 
 <p align="center">
-  <img src="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/screenshots/13-tablet-today.png" width="380" alt="平板 · 今日"/>
-  <img src="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/screenshots/14-tablet-stats.png" width="380" alt="平板 · 总结"/>
+  <img src="https://cdn.jsdelivr.net/gh/keziea/-@main/artifacts/screenshots/13-tablet-today.png" width="380" alt="平板 · 今日"/>
+  <img src="https://cdn.jsdelivr.net/gh/keziea/-@main/artifacts/screenshots/14-tablet-stats.png" width="380" alt="平板 · 总结"/>
 </p>
 
 ## 特点
@@ -46,7 +46,7 @@
 
 <p align="center">
   <a href="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/daybyday-v3.2.0.apk">
-    <img src="https://gitee.com/azs_A/day-by-day/raw/main/docs/assets/download-v3.2.0.png" alt="下载逐日 v3.2.0 安装包" height="76">
+    <img src="https://cdn.jsdelivr.net/gh/keziea/-@main/docs/assets/download-v3.2.0.png" alt="下载逐日 v3.2.0 安装包" height="76">
   </a>
 </p>
 

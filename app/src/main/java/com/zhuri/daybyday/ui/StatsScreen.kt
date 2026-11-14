@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -32,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.Alignment
@@ -52,6 +54,7 @@ import com.zhuri.daybyday.model.DiaryStats
 import com.zhuri.daybyday.model.Task
 import com.zhuri.daybyday.ui.components.IconPen
 import com.zhuri.daybyday.ui.components.ProgressRing
+import com.zhuri.daybyday.ui.components.IconChevron
 import com.zhuri.daybyday.ui.components.TextAction
 import com.zhuri.daybyday.ui.components.TrophyRow
 import com.zhuri.daybyday.ui.theme.Zhuri
@@ -269,7 +272,36 @@ fun StatsScreen(
         }.getOrNull() ?: "—"
     }
 
+    var section by remember { mutableStateOf<StatsSection?>(null) }
+    val overviewState = rememberLazyListState()
+    BackHandler(enabled = section != null) { section = null }
+    val exportAction: () -> Unit = {
+        exportLauncher.launch("zhuri-backup-${LocalDate.now()}.json")
+    }
+    val importAction: () -> Unit = {
+        importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+    }
+
+    if (section != null) {
+        StatsDetailPage(
+            section = section!!,
+            onBack = { section = null },
+            versionName = versionName,
+            versionCode = versionCode,
+            tasks = tasks,
+            diaryStats = diaryStats,
+            categories = categories,
+            today = today,
+            unlockedAchievements = unlockedAchievements,
+            streak = streak,
+            onOpenDiary = onOpenDiary,
+            onExport = exportAction,
+            onImport = importAction,
+            modifier = modifier
+        )
+    } else {
     LazyColumn(
+        state = overviewState,
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 132.dp)
     ) {
@@ -301,29 +333,17 @@ fun StatsScreen(
         item { WeekBarCard(stats) }
         item { HeatCard(stats.heat) }
         item { MissedCard(recentMissed, onMarkDone) }
-        item { TrophyCard(unlockedAchievements, streak) }
-        item { DiaryStatsCard(diaryStats, categories, today, onOpenDiary) }
         item {
-            BackupCard(
-                onExport = {
-                    exportLauncher.launch("zhuri-backup-${LocalDate.now()}.json")
-                },
-                onImport = {
-                    importLauncher.launch(
-                        arrayOf("application/json", "text/plain", "application/octet-stream")
-                    )
-                }
-            )
-        }
-        item {
-            AboutCard(
+            MoreGroup(
                 versionName = versionName,
                 versionCode = versionCode,
-                taskCount = tasks.size,
+                unlockedCount = unlockedAchievements.size,
                 noteCount = diaryStats.total,
-                trophyCount = unlockedAchievements.size
+                wordCount = diaryStats.words,
+                onOpen = { section = it }
             )
         }
+    }
     }
 
     pendingImport?.let { text ->
@@ -718,6 +738,163 @@ private fun MissedCard(
                     fontSize = 9.sp,
                     color = colors.ink3
                 )
+            }
+        }
+    }
+}
+
+private enum class StatsSection(val title: String) {
+    TROPHY("奖杯"),
+    WRITING("写作"),
+    BACKUP("数据与备份"),
+    ABOUT("关于逐日")
+}
+
+@Composable
+private fun MoreGroup(
+    versionName: String,
+    versionCode: String,
+    unlockedCount: Int,
+    noteCount: Int,
+    wordCount: Int,
+    onOpen: (StatsSection) -> Unit
+) {
+    val colors = Zhuri.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp)
+            .padding(top = 14.dp, bottom = 8.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(colors.surface)
+            .border(1.dp, colors.line, RoundedCornerShape(22.dp))
+    ) {
+        Text(
+            "更多",
+            style = Zhuri.type.label,
+            color = colors.ink3,
+            modifier = Modifier.padding(start = 18.dp, top = 16.dp, bottom = 4.dp)
+        )
+        MoreRow(
+            title = "奖杯",
+            summary = "已解锁 $unlockedCount / 10",
+            onClick = { onOpen(StatsSection.TROPHY) }
+        )
+        MoreDivider()
+        MoreRow(
+            title = "写作统计",
+            summary = "$noteCount 篇 · $wordCount 字",
+            onClick = { onOpen(StatsSection.WRITING) }
+        )
+        MoreDivider()
+        MoreRow(
+            title = "数据与备份",
+            summary = "导出或恢复完整数据",
+            onClick = { onOpen(StatsSection.BACKUP) }
+        )
+        MoreDivider()
+        MoreRow(
+            title = "关于逐日",
+            summary = "v$versionName ($versionCode)",
+            onClick = { onOpen(StatsSection.ABOUT) }
+        )
+    }
+}
+
+@Composable
+private fun MoreRow(title: String, summary: String, onClick: () -> Unit) {
+    val colors = Zhuri.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, fontSize = 14.sp, color = colors.ink)
+            Spacer(Modifier.height(2.dp))
+            Text(summary, fontSize = 9.sp, color = colors.ink3)
+        }
+        IconChevron(
+            colors.ink3,
+            direction = 1,
+            modifier = Modifier.size(12.dp)
+        )
+    }
+}
+
+@Composable
+private fun MoreDivider() {
+    val colors = Zhuri.colors
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 18.dp)
+            .height(1.dp)
+            .background(colors.line.copy(alpha = 0.6f))
+    )
+}
+
+@Composable
+private fun StatsDetailPage(
+    section: StatsSection,
+    onBack: () -> Unit,
+    versionName: String,
+    versionCode: String,
+    tasks: List<Task>,
+    diaryStats: DiaryStats,
+    categories: List<String>,
+    today: LocalDate,
+    unlockedAchievements: Set<String>,
+    streak: Int,
+    onOpenDiary: () -> Unit,
+    onExport: () -> Unit,
+    onImport: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = Zhuri.colors
+    Column(modifier = modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp)
+                .padding(top = 10.dp)
+                .clickable(onClick = onBack),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconChevron(
+                colors.ink2,
+                direction = -1,
+                modifier = Modifier.size(13.dp)
+            )
+            Spacer(Modifier.width(5.dp))
+            Text("总结", fontSize = 12.sp, color = colors.ink2)
+        }
+        Spacer(Modifier.height(4.dp))
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(bottom = 132.dp)
+        ) {
+            when (section) {
+                StatsSection.TROPHY -> item {
+                    TrophyCard(unlockedAchievements, streak)
+                }
+                StatsSection.WRITING -> item {
+                    DiaryStatsCard(diaryStats, categories, today, onOpenDiary)
+                }
+                StatsSection.BACKUP -> item {
+                    BackupCard(onExport, onImport)
+                }
+                StatsSection.ABOUT -> item {
+                    AboutCard(
+                        versionName = versionName,
+                        versionCode = versionCode,
+                        taskCount = tasks.size,
+                        noteCount = diaryStats.total,
+                        trophyCount = unlockedAchievements.size
+                    )
+                }
             }
         }
     }

@@ -1,6 +1,5 @@
 package com.zhuri.daybyday.ui.components
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -42,21 +41,10 @@ fun TaskRow(
     val colors = Zhuri.colors
     val shape = RoundedCornerShape(18.dp)
 
-    val background by animateColorAsState(
-        targetValue = if (done) colors.surfaceAlt else colors.surface,
-        animationSpec = tween(140),
-        label = "rowBg"
-    )
-    val borderColor by animateColorAsState(
-        targetValue = if (done) Color.Transparent else colors.line,
-        animationSpec = tween(140),
-        label = "rowBorder"
-    )
-    val titleColor by animateColorAsState(
-        targetValue = if (done) colors.ink3 else colors.ink,
-        animationSpec = tween(140),
-        label = "titleColor"
-    )
+    // 直接取色：列表里每行少三条动画，滚动与勾选更轻；勾选圆仍保留动效
+    val background = if (done) colors.surfaceAlt else colors.surface
+    val borderColor = if (done) Color.Transparent else colors.line
+    val titleColor = if (done) colors.ink3 else colors.ink
 
     Row(
         modifier = modifier

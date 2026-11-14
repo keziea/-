@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -303,12 +304,7 @@ fun StatsScreen(
         item { TrophyCard(unlockedAchievements, streak) }
         item { DiaryStatsCard(diaryStats, categories, today, onOpenDiary) }
         item {
-            AboutCard(
-                versionName = versionName,
-                versionCode = versionCode,
-                taskCount = tasks.size,
-                noteCount = diaryStats.total,
-                trophyCount = unlockedAchievements.size,
+            BackupCard(
                 onExport = {
                     exportLauncher.launch("zhuri-backup-${LocalDate.now()}.json")
                 },
@@ -317,6 +313,15 @@ fun StatsScreen(
                         arrayOf("application/json", "text/plain", "application/octet-stream")
                     )
                 }
+            )
+        }
+        item {
+            AboutCard(
+                versionName = versionName,
+                versionCode = versionCode,
+                taskCount = tasks.size,
+                noteCount = diaryStats.total,
+                trophyCount = unlockedAchievements.size
             )
         }
     }
@@ -719,14 +724,72 @@ private fun MissedCard(
 }
 
 @Composable
+private fun BackupCard(onExport: () -> Unit, onImport: () -> Unit) {
+    val colors = Zhuri.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp)
+            .padding(top = 14.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(colors.surface)
+            .border(1.dp, colors.line, RoundedCornerShape(22.dp))
+            .padding(18.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("数据与备份", style = Zhuri.type.label, color = colors.ink3)
+            Spacer(Modifier.weight(1f))
+            Text("建议每月一次", fontSize = 9.sp, color = colors.ink3)
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "换机或卸载前，先留一份完整备份",
+            fontSize = 11.sp,
+            color = colors.ink3
+        )
+        Spacer(Modifier.height(12.dp))
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(46.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(colors.accent)
+                    .clickable(onClick = onExport),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("导出备份", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = colors.onInk)
+            }
+            Spacer(Modifier.width(10.dp))
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(46.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(colors.surfaceAlt)
+                    .border(1.dp, colors.line, RoundedCornerShape(14.dp))
+                    .clickable(onClick = onImport),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("恢复备份", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = colors.ink)
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "备份包含日程、笔记、分类和奖杯；恢复会覆盖当前全部数据。",
+            fontSize = 9.sp,
+            color = colors.ink3
+        )
+    }
+}
+
+@Composable
 private fun AboutCard(
     versionName: String,
     versionCode: String,
     taskCount: Int,
     noteCount: Int,
-    trophyCount: Int,
-    onExport: () -> Unit,
-    onImport: () -> Unit
+    trophyCount: Int
 ) {
     val colors = Zhuri.colors
     Column(
@@ -757,18 +820,6 @@ private fun AboutCard(
             AboutStat("奖杯", "$trophyCount / 10", Modifier.weight(1f))
         }
         Spacer(Modifier.height(12.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TextAction(text = "导出备份", onClick = onExport)
-            Spacer(Modifier.width(6.dp))
-            TextAction(text = "恢复备份", onClick = onImport)
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            "换机或卸载前先导出；备份包含日程、笔记、分类和奖杯。",
-            fontSize = 9.sp,
-            color = colors.ink3
-        )
-        Spacer(Modifier.height(8.dp))
         Text(
             "所有数据只保存在这台设备上。覆盖安装会保留，卸载会清空。",
             fontSize = 10.sp,

@@ -5,18 +5,18 @@
 
 <!-- 截图 -->
 <p align="center">
-  <img src="artifacts/screenshots/00-icon.png" width="620" alt="图标"/>
+  <img src="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/screenshots/00-icon.png" width="620" alt="图标"/>
 </p>
 
 <p align="center">
-  <img src="artifacts/screenshots/01-今日.png" width="240" alt="今日"/>
-  <img src="artifacts/screenshots/06-笔记.png" width="240" alt="笔记"/>
-  <img src="artifacts/screenshots/03-总结.png" width="240" alt="总结"/>
+  <img src="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/screenshots/01-today.png" width="240" alt="今日"/>
+  <img src="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/screenshots/06-notes.png" width="240" alt="笔记"/>
+  <img src="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/screenshots/03-stats.png" width="240" alt="总结"/>
 </p>
 
 <p align="center">
-  <img src="artifacts/screenshots/13-平板-今日.png" width="380" alt="平板 · 今日"/>
-  <img src="artifacts/screenshots/14-平板-总结.png" width="380" alt="平板 · 总结"/>
+  <img src="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/screenshots/13-tablet-today.png" width="380" alt="平板 · 今日"/>
+  <img src="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/screenshots/14-tablet-stats.png" width="380" alt="平板 · 总结"/>
 </p>
 
 ## 特点
@@ -45,13 +45,16 @@
 ## 安装
 
 <p align="center">
-  <a href="artifacts/逐日-v3.2.0.apk">
-    <img src="docs/assets/download-v3.2.0.svg" alt="下载逐日 v3.2.0 安装包" height="76">
+  <a href="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/daybyday-v3.2.0.apk">
+    <img src="https://gitee.com/azs_A/day-by-day/raw/main/docs/assets/download-v3.2.0.png" alt="下载逐日 v3.2.0 安装包" height="76">
   </a>
 </p>
 
 <p align="center">
-  <strong>点上面的按钮，或 <a href="artifacts/逐日-v3.2.0.apk">直接下载 v3.2.0 安装包</a></strong>
+  <strong>点上面的按钮直接下载（Gitee，国内推荐）</strong><br>
+  <a href="https://gitee.com/azs_A/day-by-day/raw/main/artifacts/daybyday-v3.2.0.apk">Gitee 下载</a>
+  ·
+  <a href="https://github.com/keziea/-/raw/main/artifacts/daybyday-v3.2.0.apk">GitHub 下载</a>
 </p>
 
 下载后直接覆盖安装，数据会保留（**不要卸载旧版**）。

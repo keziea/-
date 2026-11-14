@@ -65,7 +65,7 @@
 │       │       └── components/          ← 复用组件（见 03 文档）
 │       └── res/                         ← 主题、图标、字符串
 ├── artifacts/                   ← 构建产物（APK）与验收截图
-│   ├── 逐日-v3.2.0.apk
+│   ├── daybyday-v3.2.0.apk
 │   └── screenshots/             ← 今日 / 日历 / 笔记 / 总结 / 编辑器 / 暗色 / 平板
 ├── scripts/
 │   ├── seed_demo.py             ← 生成演示数据（任务 + 笔记），用于截图与统计校验

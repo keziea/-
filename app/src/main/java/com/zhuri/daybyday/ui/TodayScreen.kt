@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -260,10 +261,11 @@ private fun DateHeader(
                         fontSize = 13.sp,
                         color = colors.ink3
                     )
-                    // 固定高度槽位：胶囊出现时不再改变头部高度，避免滑动一开始抖一下
+                    // 槽位随系统字体缩放，避免大字号下把「回到今天」裁掉
+                    val pillSlot = with(androidx.compose.ui.platform.LocalDensity.current) { 32.sp.toDp() }
                     Box(
                         modifier = Modifier
-                            .height(22.dp)
+                            .height(pillSlot)
                             .padding(top = 3.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {
@@ -274,14 +276,21 @@ private fun DateHeader(
                         ) {
                             Row(
                                 modifier = Modifier
+                                    .fillMaxHeight()
                                     .clip(RoundedCornerShape(50))
                                     .background(colors.accentSoft)
                                     .clickable(onClick = onBackToToday)
-                                    .padding(horizontal = 10.dp, vertical = 3.dp),
+                                    .padding(horizontal = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("回到今天", fontSize = 10.sp, color = colors.accentInk)
-                                Spacer(Modifier.width(3.dp))
+                                Text(
+                                    "回到今天",
+                                    fontSize = 10.sp,
+                                    color = colors.accentInk,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                                Spacer(Modifier.width(4.dp))
                                 IconChevron(
                                     colors.accentInk,
                                     direction = 1,

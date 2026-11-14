@@ -130,6 +130,34 @@ class TaskRepository(context: Context) {
         persist()
     }
 
+    // ---------- 备份 / 恢复 ----------
+
+    /** 导出当前数据的 JSON 文本，供系统文件选择器写入用户选定的位置。 */
+    fun exportJson(): String = runCatching {
+        if (dataFile.exists()) dataFile.readText() else ""
+    }.getOrDefault("")
+
+    /**
+     * 从备份文本恢复。返回 false 表示不是逐日的备份或内容损坏。
+     * 成功时整份替换内存状态并立即落盘；调用方需先向用户确认覆盖。
+     */
+    fun importJson(text: String): Boolean {
+        val root = runCatching { JSONObject(text) }.getOrNull() ?: return false
+        if (root.optString("app") != "zhuri" && !root.has("tasks") && !root.has("entries")) {
+            return false
+        }
+        val parsed = runCatching { parse(text) }.getOrNull() ?: return false
+        _tasks.value = parsed.tasks
+        _done.value = parsed.done
+        _entries.value = parsed.entries
+        _categories.value = parsed.categories
+        _achievements.value = parsed.achievements
+        runCatching {
+            write(dataFile, parsed.tasks, parsed.done, parsed.entries, parsed.categories, parsed.achievements)
+        }
+        return true
+    }
+
     // ---------- 落盘 ----------
 
     private fun persist() {
@@ -154,6 +182,7 @@ class TaskRepository(context: Context) {
         achievements: Set<String>
     ) {
         val root = JSONObject()
+        root.put("app", "zhuri")
         root.put("version", 1)
 
         val taskArray = JSONArray()

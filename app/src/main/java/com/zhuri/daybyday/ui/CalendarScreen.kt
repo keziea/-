@@ -150,7 +150,7 @@ fun CalendarScreen(
                 Row(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(colors.surfaceAlt)
+                        .background(colors.accentSoft)
                         .clickable(
                             onClickLabel = "回到今天",
                             onClick = {
@@ -158,20 +158,22 @@ fun CalendarScreen(
                                 onSelect(today)
                             }
                         )
-                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                        .padding(horizontal = 9.dp, vertical = 7.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        Modifier
-                            .size(5.dp)
-                            .clip(CircleShape)
-                            .background(colors.accent)
-                    )
-                    Spacer(Modifier.width(5.dp))
                     Text(
-                        text = "今天",
-                        fontSize = 11.sp,
-                        color = colors.accent
+                        text = "回到今天",
+                        fontSize = 10.sp,
+                        color = colors.accentInk,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                    Spacer(Modifier.width(2.dp))
+                    IconChevron(
+                        colors.accentInk,
+                        direction = 1,
+                        modifier = Modifier.size(9.dp),
+                        stroke = 1.4.dp
                     )
                 }
             }

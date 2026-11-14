@@ -233,6 +233,8 @@ fun Root(repo: TaskRepository) {
                     unlockedAchievements = unlockedAchievements,
                     streak = streak,
                     onMarkDone = { task, date -> toggleForDate(task, date) },
+                    onExportJson = { repo.exportJson() },
+                    onImportJson = { text -> repo.importJson(text) },
                     onOpenDiary = { tab = 2 }
                 )
             }

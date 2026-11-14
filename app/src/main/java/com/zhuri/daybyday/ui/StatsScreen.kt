@@ -22,12 +22,17 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
@@ -55,7 +60,11 @@ import com.zhuri.daybyday.util.doneKey
 import com.zhuri.daybyday.util.formatCount
 import com.zhuri.daybyday.util.toIso
 import com.zhuri.daybyday.util.weekChar
+import android.widget.Toast
 import java.time.LocalDate
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
 private data class MissedOccurrence(val task: Task, val date: LocalDate)
@@ -183,6 +192,8 @@ fun StatsScreen(
     unlockedAchievements: Set<String>,
     streak: Int,
     onMarkDone: (Task, LocalDate) -> Unit,
+    onExportJson: () -> String,
+    onImportJson: (String) -> Boolean,
     onOpenDiary: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -204,6 +215,47 @@ fun StatsScreen(
         )
     }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var pendingImport by remember { mutableStateOf<String?>(null) }
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val text = withContext(Dispatchers.IO) { onExportJson() }
+                val ok = withContext(Dispatchers.IO) {
+                    runCatching {
+                        context.contentResolver.openOutputStream(uri)?.use {
+                            it.write(text.toByteArray(Charsets.UTF_8))
+                        } != null
+                    }.getOrDefault(false)
+                }
+                Toast.makeText(
+                    context,
+                    if (ok) "备份已导出" else "导出失败，请换个位置再试",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val text = withContext(Dispatchers.IO) {
+                    runCatching {
+                        context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                    }.getOrNull()
+                }
+                if (text.isNullOrBlank()) {
+                    Toast.makeText(context, "读取备份失败", Toast.LENGTH_SHORT).show()
+                } else {
+                    pendingImport = text
+                }
+            }
+        }
+    }
     val versionName = remember(context) {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -256,9 +308,43 @@ fun StatsScreen(
                 versionCode = versionCode,
                 taskCount = tasks.size,
                 noteCount = diaryStats.total,
-                trophyCount = unlockedAchievements.size
+                trophyCount = unlockedAchievements.size,
+                onExport = {
+                    exportLauncher.launch("zhuri-backup-${LocalDate.now()}.json")
+                },
+                onImport = {
+                    importLauncher.launch(
+                        arrayOf("application/json", "text/plain", "application/octet-stream")
+                    )
+                }
             )
         }
+    }
+
+    pendingImport?.let { text ->
+        AlertDialog(
+            onDismissRequest = { pendingImport = null },
+            title = { Text("恢复这份备份？") },
+            text = {
+                Text("会用备份中的日程、笔记、分类和奖杯覆盖当前全部数据，且无法撤销。")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingImport = null
+                    scope.launch {
+                        val ok = withContext(Dispatchers.IO) { onImportJson(text) }
+                        Toast.makeText(
+                            context,
+                            if (ok) "备份已恢复" else "这不是有效的逐日备份",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }) { Text("覆盖恢复") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingImport = null }) { Text("取消") }
+            }
+        )
     }
 }
 
@@ -638,7 +724,9 @@ private fun AboutCard(
     versionCode: String,
     taskCount: Int,
     noteCount: Int,
-    trophyCount: Int
+    trophyCount: Int,
+    onExport: () -> Unit,
+    onImport: () -> Unit
 ) {
     val colors = Zhuri.colors
     Column(
@@ -669,6 +757,18 @@ private fun AboutCard(
             AboutStat("奖杯", "$trophyCount / 10", Modifier.weight(1f))
         }
         Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextAction(text = "导出备份", onClick = onExport)
+            Spacer(Modifier.width(6.dp))
+            TextAction(text = "恢复备份", onClick = onImport)
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "换机或卸载前先导出；备份包含日程、笔记、分类和奖杯。",
+            fontSize = 9.sp,
+            color = colors.ink3
+        )
+        Spacer(Modifier.height(8.dp))
         Text(
             "所有数据只保存在这台设备上。覆盖安装会保留，卸载会清空。",
             fontSize = 10.sp,
